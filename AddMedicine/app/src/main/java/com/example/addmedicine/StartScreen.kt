@@ -25,45 +25,8 @@ fun StartScreen(onStart: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFD9D9))
+            .background(Color(0xFFFFD9D9))   // ⭐ NỀN HỒNG TRƠN
     ) {
-
-        // ================== 3 SỌC NHỎ — FULL SCREEN ==================
-        Row(modifier = Modifier.fillMaxSize()) {
-
-            Box(
-                modifier = Modifier
-                    .width(22.dp)
-                    .fillMaxHeight()
-                    .background(Color.White.copy(alpha = 0.55f))
-            )
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
-
-            Box(
-                modifier = Modifier
-                    .width(22.dp)
-                    .fillMaxHeight()
-                    .background(Color.White.copy(alpha = 0.55f))
-            )
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
-
-            Box(
-                modifier = Modifier
-                    .width(22.dp)
-                    .fillMaxHeight()
-                    .background(Color.White.copy(alpha = 0.55f))
-            )
-        }
 
         // =================== TOP ICONS ===================
         Row(

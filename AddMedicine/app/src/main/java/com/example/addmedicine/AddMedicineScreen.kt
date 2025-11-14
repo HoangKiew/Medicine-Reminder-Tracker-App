@@ -57,7 +57,7 @@ fun AddMedicineScreen(navController: NavController) {
         return sdf.format(c.time)
     }
 
-    // ================== DATE PICKER LISTENER ==================
+    // ================== LISTENERS ==================
     val timePicker = TimePickerDialog.OnTimeSetListener { _, h, min ->
         val ampm = if (h >= 12) "PM" else "AM"
         val hour12 = if (h == 0) 12 else if (h > 12) h - 12 else h
@@ -71,6 +71,7 @@ fun AddMedicineScreen(navController: NavController) {
         reminderDate = "$d/${m + 1}/$y"
         selectedDay = getDayName(y, m, d)
 
+        // Sau khi chọn ngày -> chọn giờ
         TimePickerDialog(
             context,
             timePicker,
@@ -80,7 +81,7 @@ fun AddMedicineScreen(navController: NavController) {
         ).show()
     }
 
-    // ================== UI COLORS ==================
+    // ================== COLORS ==================
     val softPink = Color(0xFFFFD9D9)
     val mainPink = Color(0xFFFF6B6B)
     val blueTitle = Color(0xFF2C60FF)
@@ -97,47 +98,12 @@ fun AddMedicineScreen(navController: NavController) {
 
     val types = listOf("Viên nén", "Viên nang", "Xi-rô", "Thuốc nước")
 
-    // ================== MAIN UI ==================
-    Box(modifier = Modifier.fillMaxSize()) {
-
-        // ===== Background pattern =====
-        Row(modifier = Modifier.fillMaxSize()) {
-
-            Box(
-                modifier = Modifier
-                    .width(22.dp)
-                    .fillMaxHeight()
-                    .background(Color.White.copy(alpha = 0.55f))
-            )
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(softPink)
-            )
-
-            Box(
-                modifier = Modifier
-                    .width(22.dp)
-                    .fillMaxHeight()
-                    .background(Color.White.copy(alpha = 0.55f))
-            )
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(softPink)
-            )
-
-            Box(
-                modifier = Modifier
-                    .width(22.dp)
-                    .fillMaxHeight()
-                    .background(Color.White.copy(alpha = 0.55f))
-            )
-        }
+    // ================== UI ==================
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(softPink)   // ⭐ NỀN HỒNG TRƠN KHÔNG SỌC
+    ) {
 
         Column(
             modifier = Modifier
@@ -182,10 +148,7 @@ fun AddMedicineScreen(navController: NavController) {
                 value = medicineName,
                 onValueChange = { medicineName = it },
                 label = {
-                    Row {
-                        Text("Tên thuốc")
-                        if (medicineName.isEmpty()) Text(" *", color = Color.Red)
-                    }
+                    Row { Text("Tên thuốc"); if (medicineName.isEmpty()) Text(" *", color = Color.Red) }
                 },
                 placeholder = { Text("Ví dụ: Paracetamol", color = placeholderGray) },
                 modifier = Modifier.fillMaxWidth(),
@@ -206,10 +169,7 @@ fun AddMedicineScreen(navController: NavController) {
                     onValueChange = {},
                     readOnly = true,
                     label = {
-                        Row {
-                            Text("Loại thuốc")
-                            if (medicineType == "Chọn dạng thuốc") Text(" *", color = Color.Red)
-                        }
+                        Row { Text("Loại thuốc"); if (medicineType == "Chọn dạng thuốc") Text(" *", color = Color.Red) }
                     },
                     placeholder = { Text("Chọn dạng thuốc", color = placeholderGray) },
                     trailingIcon = { Icon(Icons.Filled.ArrowDropDown, null, tint = mainPink) },
@@ -242,10 +202,7 @@ fun AddMedicineScreen(navController: NavController) {
                 value = dosage,
                 onValueChange = { dosage = it },
                 label = {
-                    Row {
-                        Text("Liều lượng")
-                        if (dosage.isEmpty()) Text(" *", color = Color.Red)
-                    }
+                    Row { Text("Liều lượng"); if (dosage.isEmpty()) Text(" *", color = Color.Red) }
                 },
                 placeholder = { Text("Ví dụ: 500mg", color = placeholderGray) },
                 modifier = Modifier.fillMaxWidth(),
@@ -259,10 +216,7 @@ fun AddMedicineScreen(navController: NavController) {
                 value = quantity,
                 onValueChange = { if (it.all { ch -> ch.isDigit() }) quantity = it },
                 label = {
-                    Row {
-                        Text("Số lượng")
-                        if (quantity.isEmpty()) Text(" *", color = Color.Red)
-                    }
+                    Row { Text("Số lượng"); if (quantity.isEmpty()) Text(" *", color = Color.Red) }
                 },
                 placeholder = { Text("Ví dụ: 10", color = placeholderGray) },
                 modifier = Modifier.fillMaxWidth(),
