@@ -1,4 +1,4 @@
-package com.example.addmedicine
+package com.example.medinotify.ui.screens.addmedicine
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import com.example.medinotify.R
 @Composable
 fun StartScreen(onStart: () -> Unit) {
 

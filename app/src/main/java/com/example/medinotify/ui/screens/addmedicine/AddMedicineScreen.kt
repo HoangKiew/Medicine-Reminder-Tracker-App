@@ -1,4 +1,4 @@
-package com.example.addmedicine
+package com.example.medinotify.ui.screens.addmedicine
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
@@ -10,7 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.material.icons.Icons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +63,7 @@ fun AddMedicineScreen(navController: NavController) {
         val ampm = if (h >= 12) "PM" else "AM"
         val hour12 = if (h == 0) 12 else if (h > 12) h - 12 else h
 
-        selectedHour = String.format("%02d:%02d", hour12, min)
+        selectedHour = String.format(Locale.getDefault(), "%02d:%02d", hour12, min)
         selectedAmPm = ampm
         reminderTime = "$selectedHour $selectedAmPm"
     }
@@ -115,7 +116,11 @@ fun AddMedicineScreen(navController: NavController) {
             // HEADER
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = mainPink)
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        tint = mainPink
+                    )
                 }
 
                 Text(
@@ -148,7 +153,12 @@ fun AddMedicineScreen(navController: NavController) {
                 value = medicineName,
                 onValueChange = { medicineName = it },
                 label = {
-                    Row { Text("Tên thuốc"); if (medicineName.isEmpty()) Text(" *", color = Color.Red) }
+                    Row {
+                        Text("Tên thuốc"); if (medicineName.isEmpty()) Text(
+                        " *",
+                        color = Color.Red
+                    )
+                    }
                 },
                 placeholder = { Text("Ví dụ: Paracetamol", color = placeholderGray) },
                 modifier = Modifier.fillMaxWidth(),
@@ -169,12 +179,17 @@ fun AddMedicineScreen(navController: NavController) {
                     onValueChange = {},
                     readOnly = true,
                     label = {
-                        Row { Text("Loại thuốc"); if (medicineType == "Chọn dạng thuốc") Text(" *", color = Color.Red) }
+                        Row {
+                            Text("Loại thuốc"); if (medicineType == "Chọn dạng thuốc") Text(
+                            " *",
+                            color = Color.Red
+                        )
+                        }
                     },
                     placeholder = { Text("Chọn dạng thuốc", color = placeholderGray) },
                     trailingIcon = { Icon(Icons.Filled.ArrowDropDown, null, tint = mainPink) },
                     modifier = Modifier
-                        .menuAnchor()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                         .fillMaxWidth(),
                     colors = transparentColors
                 )
@@ -363,7 +378,8 @@ fun AddMedicineScreen(navController: NavController) {
                         dosage.isEmpty() ||
                         quantity.isEmpty()
                     ) {
-                        Toast.makeText(context, "Vui lòng nhập đủ thông tin!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Vui lòng nhập đủ thông tin!", Toast.LENGTH_SHORT)
+                            .show()
                     } else {
                         Toast.makeText(context, "Đã lưu thuốc!", Toast.LENGTH_SHORT).show()
                         navController.popBackStack()

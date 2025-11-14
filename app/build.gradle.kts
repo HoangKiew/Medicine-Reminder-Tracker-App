@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "com.example.medinotify"
-    compileSdk = 36
+    compileSdk {
+        version = release(36)
+    }
 
     defaultConfig {
         applicationId = "com.example.medinotify"
@@ -40,7 +42,8 @@ android {
 }
 
 dependencies {
-
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.navigation:navigation-compose:2.7.3")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
