@@ -102,7 +102,7 @@ fun AddMedicineScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(softPink)   // ⭐ NỀN HỒNG TRƠN KHÔNG SỌC
+            .background(Color.White)   // ⭐ NỀN TRẮNG
     ) {
 
         Column(
@@ -310,7 +310,7 @@ fun AddMedicineScreen(navController: NavController) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White, RoundedCornerShape(12.dp))
+                        .background(softPink, RoundedCornerShape(12.dp))
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
