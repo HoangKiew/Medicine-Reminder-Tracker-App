@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "213396909328",
+    "project_id": "medinotify-fcm",
+    "storage_bucket": "medinotify-fcm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:213396909328:android:353a021ba420a5939a4995",
+        "android_client_info": {
+          "package_name": "com.example.medinotify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEmo7rN9t2BBHjO00KhaBz7UsdtOKF3TI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
