@@ -11,7 +11,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -25,6 +27,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.medinotify.R
 
 // ----------------------------- DATA CLASS -------------------------
@@ -159,7 +162,7 @@ fun MedicineCard(item: MedicineItem) {
 // ----------------------------- MAIN HOMESCREEN -------------------------
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navController: NavController? = null) {
 
     var selectedDay by remember { mutableStateOf("7") }
 
@@ -184,7 +187,17 @@ fun HomeScreen() {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Filled.DateRange, null, tint = Color(0xFFFF5A5A), modifier = Modifier.size(28.dp))
+            // 🔥 THÊM NAVIGATION KHI NHẤN VÀO BIỂU TƯỢNG LỊCH
+            Icon(
+                Icons.Filled.DateRange,
+                contentDescription = "Calendar",
+                tint = Color(0xFFFF5A5A),
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable {
+                        navController?.navigate("calendar")
+                    }
+            )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Person, null, tint = Color(0xFF355CFF), modifier = Modifier.size(28.dp))
@@ -257,6 +270,10 @@ fun HomeScreen() {
             items(medicineList) { item ->
                 MedicineCard(item)
                 Spacer(modifier = Modifier.height(12.dp))
+            }
+            // Thêm spacing để tránh bị che bởi BottomBar
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }
