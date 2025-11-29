@@ -7,18 +7,18 @@ interface ApiService {
 
     /* ------------------ 1) MEDICINES ------------------ */
 
-    @GET("api.php")
+    @GET("index.php")  // ĐÃ ĐỔI TỪ api.php → index.php
     suspend fun getMedicines(
         @Query("action") action: String = "getMedicines",
         @Query("userId") userId: String
     ): Response<MedicineListResponse>
 
-    @POST("api.php?action=addMedicine")
+    @POST("index.php?action=addMedicine")  // ĐÃ ĐỔI
     suspend fun addMedicine(
         @Body body: MedicineDTO
     ): Response<ApiResponse>
 
-    @DELETE("api.php")
+    @DELETE("index.php")  // ĐÃ ĐỔI
     suspend fun deleteMedicine(
         @Query("action") action: String = "deleteMedicine",
         @Query("medicineId") medicineId: String
@@ -28,7 +28,7 @@ interface ApiService {
 
     /* ------------------ 2) SCHEDULE ------------------ */
 
-    @GET("api.php")
+    @GET("index.php")  // ĐÃ ĐỔI
     suspend fun getScheduleByDate(
         @Query("action") action: String = "getScheduleByDate",
         @Query("userId") userId: String,
@@ -39,8 +39,7 @@ interface ApiService {
 
     /* ------------------ 3) MARK TAKEN ------------------ */
 
-    // ⭐ FIX: dùng Map<String, String>
-    @POST("api.php?action=markTaken")
+    @POST("index.php?action=markTaken")  // ĐÃ ĐỔI
     suspend fun markTaken(
         @Body body: Map<String, String>
     ): Response<ActionResponse>
@@ -49,7 +48,7 @@ interface ApiService {
 
     /* ------------------ 4) MARK LATER ------------------ */
 
-    @POST("api.php?action=markLater")
+    @POST("index.php?action=markLater")  // ĐÃ ĐỔI
     suspend fun markLater(
         @Body body: Map<String, String>
     ): Response<ActionResponse>
@@ -58,7 +57,7 @@ interface ApiService {
 
     /* ------------------ 5) MARK MISSED ------------------ */
 
-    @POST("api.php?action=markMissed")
+    @POST("index.php?action=markMissed")  // ĐÃ ĐỔI
     suspend fun markMissed(
         @Body body: Map<String, String>
     ): Response<ActionResponse>
@@ -67,7 +66,7 @@ interface ApiService {
 
     /* ------------------ 6) GET LOG DETAIL ------------------ */
 
-    @GET("api.php")
+    @GET("index.php")  // ĐÃ ĐỔI
     suspend fun getLogDetail(
         @Query("action") action: String = "getLogDetail",
         @Query("logId") logId: String
@@ -77,7 +76,7 @@ interface ApiService {
 
     /* ------------------ 7) SAVE FCM TOKEN ------------------ */
 
-    @POST("api.php?action=saveToken")
+    @POST("index.php?action=saveToken")  // ĐÃ ĐỔI
     suspend fun saveToken(
         @Body body: Map<String, String>
     ): Response<ApiResponse>
@@ -86,7 +85,7 @@ interface ApiService {
 
     /* ------------------ 8) CHECK REMINDER ------------------ */
 
-    @GET("api.php")
+    @GET("index.php")  // ĐÃ ĐỔI
     suspend fun checkReminder(
         @Query("action") action: String = "checkReminder",
         @Query("userId") userId: String
