@@ -45,7 +45,6 @@ import com.example.medinotify.ui.theme.MedinotifyTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-
 @Composable
 fun LoginRoute(
     modifier: Modifier = Modifier,
