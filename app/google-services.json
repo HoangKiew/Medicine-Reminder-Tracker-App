@@ -12,7 +12,20 @@
           "package_name": "com.example.medinotify"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "213396909328-7m4tio3akbvletp96immm7d6qj04bfcc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.medinotify",
+            "certificate_hash": "23e8a094014125211799f5b816894e8a86350e82"
+          }
+        },
+        {
+          "client_id": "213396909328-8mpahei5l7f2fm9hp70poh773bkfnt8m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDEmo7rN9t2BBHjO00KhaBz7UsdtOKF3TI"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "213396909328-8mpahei5l7f2fm9hp70poh773bkfnt8m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -1,15 +1,30 @@
+# IntelliJ / Android Studio
 *.iml
-.gradle
+.gradle/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# Local configuration
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
 .DS_Store
+
+# Build output
 /build
 /captures
+
+# NDK / CMake
 .externalNativeBuild
 .cxx
-local.properties
+
+# Kotlin caches / errors
+.kotlin/
+
+# Firebase secret key
+api/fcm-service-account.json
+.idea/
+api/task_log.txt
+.kotlin/
