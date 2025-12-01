@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("com.google.gms.google-services")       // ⭐ THÊM
+    id("com.google.gms.google-services")       // ⭐ Firebase
 }
 
 android {
@@ -33,6 +33,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
@@ -66,11 +67,16 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
-    // ====== FIREBASE (BẠN CẦN CHO FCM) ======
+    // ====== FIREBASE ======
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-messaging")
-    implementation("com.google.firebase:firebase-analytics")   // optional
+    implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-installations")
+    implementation("com.google.firebase:firebase-auth-ktx:22.2.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+    // ====== GOOGLE SIGN-IN ======
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     // ====== TESTING ======
     testImplementation(libs.junit)
