@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">medinotify</string>
+    <string name="app_name">MediNotify</string>
+    <string name="default_web_client_id">213396909328-7m4tio3akbvletp96immm7d6qj04bfcc.apps.googleusercontent.com</string>
 </resources>
