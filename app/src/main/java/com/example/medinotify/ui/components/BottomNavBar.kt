@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/example/medinotify/ui/components/BottomNavBar.kt
 package com.example.medinotify.ui.components
 
 import androidx.compose.material.icons.Icons
@@ -15,25 +16,25 @@ fun BottomNavBar(navController: NavController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     NavigationBar {
-
-        // ---------------- HOME ----------------
+        // HOME
         NavigationBarItem(
-            selected = currentRoute == "home",
+            selected = currentRoute == "main/home",
             onClick = {
-                navController.navigate("home") {
+                navController.navigate("main/home") {
+                    popUpTo(navController.graph.startDestinationId)
                     launchSingleTop = true
-                    popUpTo("home")
                 }
             },
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+            icon = { Icon(Icons.Default.Home, contentDescription = "Trang chủ") },
             label = { Text("Trang chủ") }
         )
 
-        // ---------------- LIST ----------------
+        // DANH SÁCH THUỐC
         NavigationBarItem(
-            selected = currentRoute == "medicine_list",
+            selected = currentRoute == "main/medicine_list",
             onClick = {
-                navController.navigate("medicine_list") {
+                navController.navigate("main/medicine_list") {
+                    popUpTo(navController.graph.startDestinationId)
                     launchSingleTop = true
                 }
             },
@@ -41,23 +42,25 @@ fun BottomNavBar(navController: NavController) {
             label = { Text("Danh sách") }
         )
 
-        // ---------------- ADD ----------------
+        // THÊM THUỐC (màn StartScreen)
         NavigationBarItem(
-            selected = currentRoute == "start",
+            selected = currentRoute == "main/start",
             onClick = {
-                navController.navigate("start") {
+                navController.navigate("main/start") {
+                    popUpTo(navController.graph.startDestinationId)
                     launchSingleTop = true
                 }
             },
-            icon = { Icon(Icons.Default.Add, contentDescription = "Thêm") },
+            icon = { Icon(Icons.Default.Add, contentDescription = "Thêm thuốc") },
             label = { Text("Thêm") }
         )
 
-        // ---------------- CALENDAR ----------------
+        // LỊCH
         NavigationBarItem(
-            selected = currentRoute == "calendar",
+            selected = currentRoute == "main/calendar",
             onClick = {
-                navController.navigate("calendar") {
+                navController.navigate("main/calendar") {
+                    popUpTo(navController.graph.startDestinationId)
                     launchSingleTop = true
                 }
             },
@@ -65,11 +68,12 @@ fun BottomNavBar(navController: NavController) {
             label = { Text("Lịch") }
         )
 
-        // ---------------- PROFILE ----------------
+        // CÁ NHÂN
         NavigationBarItem(
-            selected = currentRoute == "profile",
+            selected = currentRoute == "main/profile",
             onClick = {
-                navController.navigate("profile") {
+                navController.navigate("main/profile") {
+                    popUpTo(navController.graph.startDestinationId)
                     launchSingleTop = true
                 }
             },
