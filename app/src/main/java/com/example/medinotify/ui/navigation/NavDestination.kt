@@ -20,6 +20,10 @@ sealed class NavDestination(val route: String) {
     object StartAddMedicine : NavDestination("start")
     object AddMedicine : NavDestination("add")
 
+    // PROFILE & SETTINGS
+    object Profile : NavDestination("profile")
+    object Settings : NavDestination("settings")
+
     companion object {
         val startDestination = Splash.route
     }

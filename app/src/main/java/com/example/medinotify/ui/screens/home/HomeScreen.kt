@@ -187,7 +187,7 @@ fun HomeScreen(navController: NavController? = null) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 🔥 THÊM NAVIGATION KHI NHẤN VÀO BIỂU TƯỢNG LỊCH
+            // 🔥 ICON LỊCH - Navigate to Calendar
             Icon(
                 Icons.Filled.DateRange,
                 contentDescription = "Calendar",
@@ -200,9 +200,31 @@ fun HomeScreen(navController: NavController? = null) {
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Person, null, tint = Color(0xFF355CFF), modifier = Modifier.size(28.dp))
+                // 🔥 ICON PERSON - Navigate to Profile
+                Icon(
+                    Icons.Filled.Person,
+                    contentDescription = "Profile",
+                    tint = Color(0xFF355CFF),
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clickable {
+                            navController?.navigate("profile")
+                        }
+                )
+
                 Spacer(modifier = Modifier.width(18.dp))
-                Icon(Icons.Filled.Settings, null, tint = Color.DarkGray, modifier = Modifier.size(28.dp))
+
+                // 🔥 ICON SETTINGS - Navigate to Settings
+                Icon(
+                    Icons.Filled.Settings,
+                    contentDescription = "Settings",
+                    tint = Color.DarkGray,
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clickable {
+                            navController?.navigate("settings")
+                        }
+                )
             }
         }
 

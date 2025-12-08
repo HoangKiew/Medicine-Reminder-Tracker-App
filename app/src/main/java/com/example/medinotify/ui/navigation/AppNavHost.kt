@@ -17,6 +17,8 @@ import com.example.medinotify.ui.screens.calendar.CalendarScreen
 import com.example.medinotify.ui.screens.history.MedicineHistoryDetailScreen
 import com.example.medinotify.ui.screens.history.MedicineHistoryScreen
 import com.example.medinotify.ui.screens.home.HomeScreen
+import com.example.medinotify.ui.screens.profile.ProfileScreen
+import com.example.medinotify.ui.screens.settings.SettingsScreen
 import com.example.medinotify.ui.screens.auth.login.LoginRoute
 import com.example.medinotify.ui.screens.auth.password.ForgotPasswordRoute
 import com.example.medinotify.ui.screens.auth.password.ResetPasswordRoute
@@ -65,6 +67,8 @@ private fun NavHostController.navigateToHome() {
         launchSingleTop = true
     }
 }
+
+// ==================== AUTH GRAPH ====================
 
 private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHostController) {
     composable(NavDestination.Splash.route) {
@@ -121,10 +125,25 @@ private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHost
     }
 }
 
+// ==================== MAIN GRAPH ====================
+
 private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHostController) {
-    composable(NavDestination.Home.route) { HomeScreen(navController) }
-    composable(NavDestination.Calendar.route) { CalendarScreen(navController) }
-    composable(NavDestination.MedicineHistory.route) { MedicineHistoryScreen(navController) }
+    // Home
+    composable(NavDestination.Home.route) {
+        HomeScreen(navController)
+    }
+
+    // Calendar
+    composable(NavDestination.Calendar.route) {
+        CalendarScreen(navController)
+    }
+
+    // Medicine History
+    composable(NavDestination.MedicineHistory.route) {
+        MedicineHistoryScreen(navController)
+    }
+
+    // Medicine History Detail (with parameter)
     composable(
         route = NavDestination.MedicineHistoryDetail.route,
         arguments = listOf(navArgument("date") { type = NavType.StringType })
@@ -132,6 +151,8 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         val date = backStackEntry.arguments?.getString("date") ?: ""
         MedicineHistoryDetailScreen(navController, date)
     }
+
+    // Add Medicine Flow
     composable(NavDestination.StartAddMedicine.route) {
         StartScreen {
             navController.navigate(NavDestination.AddMedicine.route) {
@@ -139,5 +160,17 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
             }
         }
     }
-    composable(NavDestination.AddMedicine.route) { AddMedicineScreen(navController) }
+
+    composable(NavDestination.AddMedicine.route) {
+        AddMedicineScreen(navController)
+    }
+
+    // Profile & Settings
+    composable(NavDestination.Profile.route) {
+        ProfileScreen(navController = navController)
+    }
+
+    composable(NavDestination.Settings.route) {
+        SettingsScreen(navController = navController)
+    }
 }
