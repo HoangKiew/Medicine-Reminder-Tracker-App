@@ -43,7 +43,8 @@ android {
 }
 
 dependencies {
-
+    val workVersion = "2.9.0" // Thay thế bằng phiên bản mới nhất nếu có
+    implementation("androidx.work:work-runtime-ktx:$workVersion")
     // Compose
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.3")

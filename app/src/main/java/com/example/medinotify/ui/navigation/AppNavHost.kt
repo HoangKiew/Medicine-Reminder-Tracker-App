@@ -29,6 +29,10 @@ import com.example.medinotify.ui.screens.auth.splash.SplashScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 
+// Import các màn hình cần thiết
+import com.example.medinotify.ui.screens.settings.account.NotificationsScreen
+import com.example.medinotify.ui.screens.settings.account.SecurityScreen // ✨ IMPORT MÀN HÌNH BẢO VỆ ✨
+
 @Composable
 fun MedinotifyApp(
     modifier: Modifier = Modifier,
@@ -172,5 +176,15 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
 
     composable(NavDestination.Settings.route) {
         SettingsScreen(navController = navController)
+    }
+
+    // Màn hình Thông báo
+    composable(NavDestination.Notifications.route) {
+        NotificationsScreen(navController = navController)
+    }
+
+    // ✨ THÊM MÀN HÌNH BẢO VỆ MỚI ✨
+    composable(NavDestination.Security.route) {
+        SecurityScreen(navController = navController)
     }
 }

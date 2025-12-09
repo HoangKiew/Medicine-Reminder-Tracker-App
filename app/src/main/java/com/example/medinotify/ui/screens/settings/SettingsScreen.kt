@@ -96,19 +96,14 @@ fun SettingsScreen(navController: NavController) {
                             SettingsMenuItem(
                                 icon = Icons.Default.Security,
                                 title = "Bảo vệ",
-                                onClick = { /* TODO */ }
+                                // ✨ CẬP NHẬT ONCLICK ĐỂ ĐIỀU HƯỚNG ĐẾN MÀN HÌNH BẢO VỆ ✨
+                                onClick = { navController.navigate("settings/account/security") }
                             )
                             Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
                             SettingsMenuItem(
                                 icon = Icons.Default.Notifications,
                                 title = "Thông báo",
-                                onClick = { /* TODO */ }
-                            )
-                            Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
-                            SettingsMenuItem(
-                                icon = Icons.Default.Lock,
-                                title = "Khóa",
-                                onClick = { /* TODO */ }
+                                onClick = { navController.navigate("settings/account/notifications") }
                             )
                         }
                     }
@@ -129,11 +124,6 @@ fun SettingsScreen(navController: NavController) {
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column {
-                            SettingsMenuItem(
-                                icon = Icons.Outlined.CreditCard,
-                                title = "Đăng ký của tôi",
-                                onClick = { /* TODO */ }
-                            )
                             Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
                             SettingsMenuItem(
                                 icon = Icons.Default.Help,
