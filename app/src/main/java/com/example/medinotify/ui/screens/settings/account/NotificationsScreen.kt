@@ -157,7 +157,7 @@ fun NotificationsTopBar(
                 "Cài đặt",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2C60FF)
+                color = Color(0xFF6395EE)
             )
         },
         navigationIcon = {

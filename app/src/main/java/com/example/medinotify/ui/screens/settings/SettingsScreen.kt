@@ -63,7 +63,7 @@ fun SettingsScreen(navController: NavController) {
                     "Cài đặt",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2C60FF)
+                    color = Color(0xFF6395EE)
                 )
             }
 
@@ -96,7 +96,6 @@ fun SettingsScreen(navController: NavController) {
                             SettingsMenuItem(
                                 icon = Icons.Default.Security,
                                 title = "Bảo vệ",
-                                // ✨ CẬP NHẬT ONCLICK ĐỂ ĐIỀU HƯỚNG ĐẾN MÀN HÌNH BẢO VỆ ✨
                                 onClick = { navController.navigate("settings/account/security") }
                             )
                             Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)

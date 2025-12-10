@@ -98,7 +98,7 @@ fun CalendarScreen(navController: NavController) {
                 Icon(
                     Icons.Default.Person,
                     contentDescription = "Profile",
-                    tint = Color(0xFF355CFF),
+                    tint = Color(0xFF6395EE),
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(modifier = Modifier.width(18.dp))
@@ -271,7 +271,7 @@ fun CalendarScreen(navController: NavController) {
                     .weight(1f)
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2C60FF)
+                    containerColor = Color(0xFF6395EE)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -284,7 +284,7 @@ fun CalendarScreen(navController: NavController) {
                     .weight(1f)
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2C60FF)
+                    containerColor = Color(0xFF6395EE)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -359,7 +359,7 @@ fun CalendarDayCell(
             .padding(2.dp)
             .background(
                 color = when {
-                    isSelected -> Color(0xFF2C60FF)
+                    isSelected -> Color(0xFF6395EE)
                     isToday -> Color(0xFFE3F2FD)
                     else -> Color.Transparent
                 },
@@ -374,7 +374,7 @@ fun CalendarDayCell(
             fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
             color = when {
                 isSelected -> Color.White
-                isToday -> Color(0xFF2C60FF)
+                isToday -> Color(0xFF6395EE)
                 else -> Color.Black
             }
         )
@@ -433,7 +433,7 @@ fun MedicineCalendarCard(medicine: MedicineCalendarItem) {
 
             // Time
             Surface(
-                color = Color(0xFF2C60FF),
+                color = Color(0xFF6395EE),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(

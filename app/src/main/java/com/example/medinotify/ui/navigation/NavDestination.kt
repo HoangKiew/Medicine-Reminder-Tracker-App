@@ -22,10 +22,8 @@ sealed class NavDestination(val route: String) {
 
     // PROFILE & SETTINGS
     object Profile : NavDestination("profile")
+    object EditProfile : NavDestination("edit_profile")
     object Settings : NavDestination("settings")
-    object Notifications : NavDestination("settings/account/notifications")
-    // ✨ THÊM MỤC ĐÍCH ĐIỀU HƯỚNG MỚI CHO BẢO VỆ ✨
-    object Security : NavDestination("settings/account/security")
 
     companion object {
         val startDestination = Splash.route

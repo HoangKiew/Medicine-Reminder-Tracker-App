@@ -76,7 +76,7 @@ fun MedicineHistoryDetailScreen(navController: NavController, date: String = "15
                     Icon(
                         Icons.Default.Person,
                         contentDescription = "Profile",
-                        tint = Color(0xFF355CFF),
+                        tint = Color(0xFF6395EE),
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(18.dp))
@@ -96,7 +96,7 @@ fun MedicineHistoryDetailScreen(navController: NavController, date: String = "15
                 "Lịch sử uống thuốc",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2C60FF),
+                color = Color(0xFF6395EE),
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
 
@@ -116,7 +116,7 @@ fun MedicineHistoryDetailScreen(navController: NavController, date: String = "15
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Color.LightGray,
-                    focusedBorderColor = Color(0xFF2C60FF),
+                    focusedBorderColor = Color(0xFF6395EE),
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White
                 ),
@@ -140,7 +140,7 @@ fun MedicineHistoryDetailScreen(navController: NavController, date: String = "15
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Color.LightGray,
-                    focusedBorderColor = Color(0xFF2C60FF),
+                    focusedBorderColor = Color(0xFF6395EE),
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White
                 ),
@@ -186,7 +186,7 @@ fun MedicineHistoryDetailScreen(navController: NavController, date: String = "15
                     .padding(horizontal = 20.dp, vertical = 16.dp)
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2C60FF)
+                    containerColor = Color(0xFF6395EE)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -252,7 +252,7 @@ fun MedicineHistoryItemWithStatus(medicine: MedicineHistory) {
 
             // Time
             Surface(
-                color = Color(0xFF2C60FF),
+                color = Color(0xFF6395EE),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(

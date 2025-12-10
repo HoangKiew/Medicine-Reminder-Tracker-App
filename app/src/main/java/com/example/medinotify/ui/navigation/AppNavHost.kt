@@ -18,6 +18,7 @@ import com.example.medinotify.ui.screens.history.MedicineHistoryDetailScreen
 import com.example.medinotify.ui.screens.history.MedicineHistoryScreen
 import com.example.medinotify.ui.screens.home.HomeScreen
 import com.example.medinotify.ui.screens.profile.ProfileScreen
+import com.example.medinotify.ui.screens.profile.EditProfileScreen
 import com.example.medinotify.ui.screens.settings.SettingsScreen
 import com.example.medinotify.ui.screens.auth.login.LoginRoute
 import com.example.medinotify.ui.screens.auth.password.ForgotPasswordRoute
@@ -28,10 +29,6 @@ import com.example.medinotify.ui.screens.auth.register.RegisterRoute
 import com.example.medinotify.ui.screens.auth.splash.SplashScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-
-// Import các màn hình cần thiết
-import com.example.medinotify.ui.screens.settings.account.NotificationsScreen
-import com.example.medinotify.ui.screens.settings.account.SecurityScreen // ✨ IMPORT MÀN HÌNH BẢO VỆ ✨
 
 @Composable
 fun MedinotifyApp(
@@ -174,17 +171,11 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         ProfileScreen(navController = navController)
     }
 
+    composable(NavDestination.EditProfile.route) {
+        EditProfileScreen(navController = navController)
+    }
+
     composable(NavDestination.Settings.route) {
         SettingsScreen(navController = navController)
-    }
-
-    // Màn hình Thông báo
-    composable(NavDestination.Notifications.route) {
-        NotificationsScreen(navController = navController)
-    }
-
-    // ✨ THÊM MÀN HÌNH BẢO VỆ MỚI ✨
-    composable(NavDestination.Security.route) {
-        SecurityScreen(navController = navController)
     }
 }

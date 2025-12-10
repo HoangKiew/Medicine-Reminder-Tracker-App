@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -23,7 +24,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.medinotify.R
-import com.example.medinotify.ui.screens.settings.SettingsScreen
+import com.example.medinotify.ui.navigation.NavDestination
+
+val PrimaryBlue = Color(0xFF6395EE)
+val LightBlueAccent = PrimaryBlue.copy(alpha = 0.1f)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +40,6 @@ fun ProfileScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Top Bar với nút back và title
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -60,7 +63,7 @@ fun ProfileScreen(navController: NavController) {
                     "Hồ sơ cá nhân",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2C60FF)
+                    color = PrimaryBlue
                 )
             }
 
@@ -81,31 +84,33 @@ fun ProfileScreen(navController: NavController) {
                     Box(
                         modifier = Modifier
                             .size(120.dp)
-                            .border(3.dp, Color(0xFF2C60FF), CircleShape)
+                            .border(3.dp, PrimaryBlue, CircleShape) // Dùng màu xanh mới
                             .padding(4.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFE3F2FD)),
+                            .background(LightBlueAccent), // Dùng màu xanh nhạt
                         contentAlignment = Alignment.Center
                     ) {
-                        // Placeholder avatar - bạn có thể thay bằng Image
+
                         Icon(
                             Icons.Default.Person,
                             contentDescription = "Avatar",
                             modifier = Modifier.size(80.dp),
-                            tint = Color(0xFF2C60FF)
+                            tint = PrimaryBlue
                         )
                     }
 
-                    // Edit button
-                    Box(
+                    // Edit button trên avatar
+                    IconButton(
+                        onClick = {
+                            // TODO: Thêm logic điều hướng đến màn hình chỉnh sửa ảnh đại diện nếu có
+                        },
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF2C60FF), CircleShape),
-                        contentAlignment = Alignment.Center
+                            .background(PrimaryBlue, CircleShape),
                     ) {
                         Icon(
                             Icons.Default.Edit,
-                            contentDescription = "Edit",
+                            contentDescription = "Edit Avatar",
                             tint = Color.White,
                             modifier = Modifier.size(20.dp)
                         )
@@ -170,13 +175,42 @@ fun ProfileScreen(navController: NavController) {
                     value = "User123@mail.com"
                 )
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    navController.navigate(NavDestination.EditProfile.route)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryBlue
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "Chỉnh sửa hồ sơ",
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
 
 @Composable
 fun ProfileInfoField(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     value: String
 ) {
     Card(
@@ -209,6 +243,7 @@ fun ProfileInfoField(
     }
 }
 
+
 // ==================== PREVIEW ====================
 
 @Preview(showBackground = true)
@@ -218,4 +253,3 @@ fun ProfileScreenPreview() {
         ProfileScreen(navController = rememberNavController())
     }
 }
-
