@@ -1,47 +1,58 @@
+// MainActivity.kt
 package com.example.medinotify
 
+import android.Manifest // Thêm import cho Manifest
+import android.content.pm.PackageManager
+import android.os.Build // Thêm import cho Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.medinotify.ui.theme.MedinotifyTheme
+import androidx.activity.result.contract.ActivityResultContracts // Thêm import cho ActivityResultContracts
+import androidx.compose.material3.MaterialTheme
+import androidx.core.content.ContextCompat // Thêm import cho ContextCompat
+import com.example.medinotify.ui.navigation.MedinotifyApp
 
 class MainActivity : ComponentActivity() {
+
+    // Khởi tạo ActivityResultLauncher để xử lý kết quả yêu cầu quyền
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                // Quyền được cấp, có thể gửi thông báo
+            } else {
+                // Quyền bị từ chối, tính năng thông báo có thể không hoạt động
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        // ✨ GỌI HÀM YÊU CẦU QUYỀN TRƯỚC KHI SET CONTENT ✨
+        requestNotificationPermission()
+
         setContent {
-            MedinotifyTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+            MaterialTheme {
+                MedinotifyApp()
             }
         }
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+    /**
+     * Yêu cầu quyền POST_NOTIFICATIONS nếu thiết bị chạy Android 13 (API 33) trở lên.
+     */
+    private fun requestNotificationPermission() {
+        // Chỉ yêu cầu quyền nếu API >= 33 (Android 13/TIRAMISU)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MedinotifyTheme {
-        Greeting("Android")
+            // 1. Kiểm tra xem quyền đã được cấp chưa
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // 2. Nếu chưa cấp, yêu cầu quyền từ người dùng
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 }
