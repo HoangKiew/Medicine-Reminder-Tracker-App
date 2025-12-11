@@ -30,6 +30,10 @@ import com.example.medinotify.ui.screens.auth.splash.SplashScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.example.medinotify.ui.screens.reminder.MedicineReminderScreen
+import com.example.medinotify.ui.screens.settings.account.NotificationsScreen
+// Thêm import cho màn hình Trợ giúp & Hỗ trợ
+import com.example.medinotify.ui.screens.settings.HelpAndSupportScreen
+
 @Composable
 fun MedinotifyApp(
     modifier: Modifier = Modifier,
@@ -139,12 +143,10 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         CalendarScreen(navController)
     }
 
-    // Medicine History
     composable(NavDestination.MedicineHistory.route) {
         MedicineHistoryScreen(navController)
     }
 
-    // Medicine History Detail (with parameter)
     composable(
         route = NavDestination.MedicineHistoryDetail.route,
         arguments = listOf(navArgument("date") { type = NavType.StringType })
@@ -153,7 +155,6 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         MedicineHistoryDetailScreen(navController, date)
     }
 
-    // Add Medicine Flow
     composable(NavDestination.StartAddMedicine.route) {
         StartScreen {
             navController.navigate(NavDestination.AddMedicine.route) {
@@ -178,7 +179,14 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
     composable(NavDestination.Settings.route) {
         SettingsScreen(navController = navController)
     }
-    // MÀN HÌNH NHẮC UỐNG THUỐC – ĐÃ HOÀN THIỆN
+    composable(NavDestination.Notifications.route) {
+        NotificationsScreen(navController = navController)
+    }
+
+    composable(NavDestination.HelpAndSupport.route) {
+        HelpAndSupportScreen(navController = navController)
+    }
+
     composable(NavDestination.MedicineReminder.route) {
         MedicineReminderScreen(
             onBack = { navController.popBackStack() }

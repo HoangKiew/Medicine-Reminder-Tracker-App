@@ -94,12 +94,6 @@ fun SettingsScreen(navController: NavController) {
                             )
                             Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
                             SettingsMenuItem(
-                                icon = Icons.Default.Security,
-                                title = "Bảo vệ",
-                                onClick = { navController.navigate("settings/account/security") }
-                            )
-                            Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
-                            SettingsMenuItem(
                                 icon = Icons.Default.Notifications,
                                 title = "Thông báo",
                                 onClick = { navController.navigate("settings/account/notifications") }
@@ -127,7 +121,7 @@ fun SettingsScreen(navController: NavController) {
                             SettingsMenuItem(
                                 icon = Icons.Default.Help,
                                 title = "Trợ giúp & Hỗ trợ",
-                                onClick = { /* TODO */ }
+                                onClick ={ navController.navigate("settings/support/help_and_support") }
                             )
                             Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
                             SettingsMenuItem(
@@ -140,7 +134,6 @@ fun SettingsScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                // Bộ nhớ đệm và di động Section
                 item {
                     SettingsSectionTitle("Bộ nhớ đệm và di động")
                     Spacer(modifier = Modifier.height(8.dp))
@@ -170,7 +163,6 @@ fun SettingsScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                // Actions Section
                 item {
                     SettingsSectionTitle("Actions")
                     Spacer(modifier = Modifier.height(8.dp))
@@ -209,7 +201,7 @@ fun SettingsScreen(navController: NavController) {
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(80.dp)) // Space for bottom navigation
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
         }
