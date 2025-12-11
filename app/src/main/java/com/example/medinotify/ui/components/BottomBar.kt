@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
+import com.example.medinotify.ui.navigation.NavDestination // ✨ BƯỚC 1: Import lớp NavDestination
 
 @Composable
 fun BottomBar(navController: NavHostController, currentRoute: String?) {
@@ -15,10 +16,13 @@ fun BottomBar(navController: NavHostController, currentRoute: String?) {
 
         // ------------------- HOME -------------------
         NavigationBarItem(
-            selected = currentRoute == "home",
+            // ✨ SỬA LỖI: So sánh với route từ NavDestination
+            selected = currentRoute == NavDestination.Home.route,
             onClick = {
-                navController.navigate("home") {
-                    popUpTo("home") { inclusive = false }
+                // ✨ SỬA LỖI: Điều hướng bằng route từ NavDestination
+                navController.navigate(NavDestination.Home.route) {
+                    // Dùng route đúng để popUpTo
+                    popUpTo(NavDestination.Home.route) { inclusive = false }
                     launchSingleTop = true
                 }
             },
@@ -28,10 +32,13 @@ fun BottomBar(navController: NavHostController, currentRoute: String?) {
 
         // ------------------- THÊM THUỐC → STARTSCREEN -------------------
         NavigationBarItem(
-            selected = currentRoute == "start",
+            // ✨ SỬA LỖI: So sánh với route đúng của luồng thêm thuốc
+            selected = currentRoute == NavDestination.StartAddMedicine.route,
             onClick = {
-                navController.navigate("start") {
-                    popUpTo("home") { inclusive = false }
+                // ✨ SỬA LỖI: Điều hướng đến màn hình bắt đầu của luồng thêm thuốc
+                navController.navigate(NavDestination.StartAddMedicine.route) {
+                    // Dùng route đúng để popUpTo
+                    popUpTo(NavDestination.Home.route) { inclusive = false }
                     launchSingleTop = true
                 }
             },

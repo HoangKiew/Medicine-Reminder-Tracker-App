@@ -28,10 +28,8 @@ import com.example.medinotify.ui.screens.auth.register.RegisterRoute
 import com.example.medinotify.ui.screens.auth.splash.SplashScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-
-// Import các màn hình cần thiết
 import com.example.medinotify.ui.screens.settings.account.NotificationsScreen
-import com.example.medinotify.ui.screens.settings.account.SecurityScreen // ✨ IMPORT MÀN HÌNH BẢO VỆ ✨
+import com.example.medinotify.ui.screens.settings.account.SecurityScreen
 
 @Composable
 fun MedinotifyApp(
@@ -43,7 +41,9 @@ fun MedinotifyApp(
 
     val showBottomBar = currentRoute in listOf(
         NavDestination.Home.route,
-        NavDestination.StartAddMedicine.route
+        NavDestination.Calendar.route,
+        NavDestination.MedicineHistory.route,
+        NavDestination.Profile.route
     )
 
     Scaffold(
@@ -53,10 +53,9 @@ fun MedinotifyApp(
             }
         }
     ) { paddingValues ->
-
         NavHost(
             navController = navController,
-            startDestination = NavDestination.startDestination,
+            startDestination = NavDestination.Splash.route,
             modifier = Modifier.padding(paddingValues)
         ) {
             authGraph(navController)
@@ -73,12 +72,13 @@ private fun NavHostController.navigateToHome() {
 }
 
 // ==================== AUTH GRAPH ====================
-
 private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHostController) {
     composable(NavDestination.Splash.route) {
         SplashScreen(
+            // ✅ SỬA LỖI 1: Đã xóa tham số 'onStart' không tồn tại
             onLogin = { navController.navigate(NavDestination.Login.route) },
             onRegister = { navController.navigate(NavDestination.Register.route) }
+            // Gợi ý: bạn có thể cần thêm onContinue = { navController.navigateToHome() }
         )
     }
 
@@ -114,9 +114,11 @@ private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHost
 
     composable(NavDestination.ResetPasswordSuccess.route) {
         ResetPasswordSuccessScreen(
-            onBackToLogin = { navController.navigate(NavDestination.Login.route) {
-                popUpTo(NavDestination.Splash.route) { inclusive = true }
-            } }
+            onBackToLogin = {
+                navController.navigate(NavDestination.Login.route) {
+                    popUpTo(NavDestination.Splash.route) { inclusive = true }
+                }
+            }
         )
     }
 
@@ -153,16 +155,17 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         arguments = listOf(navArgument("date") { type = NavType.StringType })
     ) { backStackEntry ->
         val date = backStackEntry.arguments?.getString("date") ?: ""
-        MedicineHistoryDetailScreen(navController, date)
+        MedicineHistoryDetailScreen(navController)
     }
 
     // Add Medicine Flow
     composable(NavDestination.StartAddMedicine.route) {
-        StartScreen {
+        // ✅ SỬA LỖI 2: Truyền lambda vào đúng tham số 'onStart'
+        StartScreen(onStart = {
             navController.navigate(NavDestination.AddMedicine.route) {
                 launchSingleTop = true
             }
-        }
+        })
     }
 
     composable(NavDestination.AddMedicine.route) {
@@ -183,7 +186,7 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         NotificationsScreen(navController = navController)
     }
 
-    // ✨ THÊM MÀN HÌNH BẢO VỆ MỚI ✨
+    // Màn hình Bảo vệ
     composable(NavDestination.Security.route) {
         SecurityScreen(navController = navController)
     }

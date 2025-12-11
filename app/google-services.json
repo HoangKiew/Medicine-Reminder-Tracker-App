@@ -1,41 +1,49 @@
 {
   "project_info": {
-    "project_number": "213396909328",
-    "project_id": "medinotify-fcm",
-    "storage_bucket": "medinotify-fcm.firebasestorage.app"
+    "project_number": "867093055714",
+    "project_id": "medinotify-7eec1",
+    "storage_bucket": "medinotify-7eec1.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:213396909328:android:353a021ba420a5939a4995",
+        "mobilesdk_app_id": "1:867093055714:android:4d8ec8f1a205888009b6bb",
         "android_client_info": {
           "package_name": "com.example.medinotify"
         }
       },
       "oauth_client": [
         {
-          "client_id": "213396909328-7m4tio3akbvletp96immm7d6qj04bfcc.apps.googleusercontent.com",
+          "client_id": "867093055714-osccf3vin563392q5bstd2rakkccjl3q.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.medinotify",
-            "certificate_hash": "23e8a094014125211799f5b816894e8a86350e82"
+            "certificate_hash": "858cada1cdab6244e9d032d4fbb51b385bc8821d"
           }
         },
         {
-          "client_id": "213396909328-8mpahei5l7f2fm9hp70poh773bkfnt8m.apps.googleusercontent.com",
+          "client_id": "867093055714-phggu8t3cak6qbcbc1mre9q2i9ol35ih.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.medinotify",
+            "certificate_hash": "f0ed7a4263974095249f8764fdbb2a7be9644a62"
+          }
+        },
+        {
+          "client_id": "867093055714-06hp0rg50gfurcodemts8lb55kq4d458.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDEmo7rN9t2BBHjO00KhaBz7UsdtOKF3TI"
+          "current_key": "AIzaSyARLxVL6LcVVHDb545G5fSeRtZJzrAQj3s"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "213396909328-8mpahei5l7f2fm9hp70poh773bkfnt8m.apps.googleusercontent.com",
+              "client_id": "867093055714-06hp0rg50gfurcodemts8lb55kq4d458.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
