@@ -29,7 +29,7 @@ import com.example.medinotify.ui.screens.auth.register.RegisterRoute
 import com.example.medinotify.ui.screens.auth.splash.SplashScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-
+import com.example.medinotify.ui.screens.reminder.MedicineReminderScreen
 @Composable
 fun MedinotifyApp(
     modifier: Modifier = Modifier,
@@ -177,5 +177,11 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
 
     composable(NavDestination.Settings.route) {
         SettingsScreen(navController = navController)
+    }
+    // MÀN HÌNH NHẮC UỐNG THUỐC – ĐÃ HOÀN THIỆN
+    composable(NavDestination.MedicineReminder.route) {
+        MedicineReminderScreen(
+            onBack = { navController.popBackStack() }
+        )
     }
 }

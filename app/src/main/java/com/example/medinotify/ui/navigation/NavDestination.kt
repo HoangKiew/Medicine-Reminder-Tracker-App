@@ -20,6 +20,9 @@ sealed class NavDestination(val route: String) {
     object StartAddMedicine : NavDestination("start")
     object AddMedicine : NavDestination("add")
 
+    // REMINDER (NEW)
+    object MedicineReminder : NavDestination("medicine_reminder")
+
     // PROFILE & SETTINGS
     object Profile : NavDestination("profile")
     object EditProfile : NavDestination("edit_profile")
