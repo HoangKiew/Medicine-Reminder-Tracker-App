@@ -3,17 +3,43 @@ package com.example.medinotify.ui.screens.settings
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast // ✅ Import Toast
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope // ✅ ĐÃ THÊM IMPORT NÀY
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,10 +52,17 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.medinotify.ui.navigation.NavDestination
-import kotlinx.coroutines.Dispatchers // ✅ Import Dispatchers
-import kotlinx.coroutines.launch // ✅ Import launch
-import kotlinx.coroutines.withContext // ✅ Import withContext
-import java.io.File // ✅ Import File
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.koin.androidx.compose.koinViewModel
+import java.io.File
+
+// ==========================================
+// DATA MODELS
+// ==========================================
 
 data class SettingsItem(
     val icon: ImageVector,
@@ -38,11 +71,18 @@ data class SettingsItem(
     val onClick: (() -> Unit)? = null
 )
 
+// ==========================================
+// MAIN SCREEN
+// ==========================================
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(navController: NavController) {
+fun SettingsScreen(
+    navController: NavController,
+    // ✅ Inject ViewModel (Sẽ hết lỗi sau khi tạo file ở Bước 1)
+    viewModel: SettingsViewModel = koinViewModel()
+) {
     val context = LocalContext.current
-    // ✅ Tạo scope để chạy các tác vụ ngầm (như xóa file)
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -53,175 +93,102 @@ fun SettingsScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Top Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { navController.popBackStack() }
-                ) {
-                    Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.Black
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Text(
-                    "Cài đặt",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF6395EE)
-                )
-            }
+            // --- TOP BAR ---
+            SettingsTopBar(
+                onBackClick = { navController.popBackStack() }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // --- MENU LIST ---
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
-                // Tài khoản Section
+                // 1. SECTION: TÀI KHOẢN
+                item { SettingsSectionTitle("Tài khoản") }
                 item {
-                    SettingsSectionTitle("Tài khoản")
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Column {
-                            SettingsMenuItem(
-                                icon = Icons.Default.Person,
-                                title = "Chỉnh sửa hồ sơ",
-                                onClick = { navController.navigate(NavDestination.Profile.route) }
-                            )
-                            Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
-                            SettingsMenuItem(
-                                icon = Icons.Default.Notifications,
-                                title = "Thông báo",
-                                onClick = { navController.navigate(NavDestination.Notifications.route) }
-                            )
-                        }
+                    SettingsCard {
+                        SettingsMenuItem(
+                            icon = Icons.Default.Person,
+                            title = "Chỉnh sửa hồ sơ",
+                            onClick = { navController.navigate(NavDestination.Profile.route) }
+                        )
+                        SettingsDivider()
+                        SettingsMenuItem(
+                            icon = Icons.Default.Notifications,
+                            title = "Thông báo",
+                            onClick = { navController.navigate(NavDestination.Notifications.route) }
+                        )
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    SectionSpacer()
                 }
 
-                // Hỗ trợ & Giới thiệu Section
+                // 2. SECTION: HỖ TRỢ & GIỚI THIỆU
+                item { SettingsSectionTitle("Hỗ trợ & Giới thiệu") }
                 item {
-                    SettingsSectionTitle("Hỗ trợ & Giới thiệu")
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Column {
-                            SettingsMenuItem(
-                                icon = Icons.Default.Help,
-                                title = "Trợ giúp & Hỗ trợ",
-                                onClick = { navController.navigate(NavDestination.HelpAndSupport.route) }
-                            )
-                            Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
-                            SettingsMenuItem(
-                                icon = Icons.Default.Info,
-                                title = "Điều khoản và Chính sách",
-                                onClick = { /* TODO */ }
-                            )
-                        }
+                    SettingsCard {
+                        SettingsMenuItem(
+                            icon = Icons.Default.Help,
+                            title = "Trợ giúp & Hỗ trợ",
+                            onClick = { navController.navigate(NavDestination.HelpAndSupport.route) }
+                        )
+                        SettingsDivider()
+                        SettingsMenuItem(
+                            icon = Icons.Default.Info,
+                            title = "Điều khoản và Chính sách",
+                            onClick = { /* TODO: Implement Policy link */ }
+                        )
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    SectionSpacer()
                 }
 
-                // Bộ nhớ đệm và di động Section
+                // 3. SECTION: BỘ NHỚ ĐỆM & DI ĐỘNG
+                item { SettingsSectionTitle("Bộ nhớ đệm và di động") }
                 item {
-                    SettingsSectionTitle("Bộ nhớ đệm và di động")
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Column {
-                            // ✨✨✨ TÍNH NĂNG DỌN BỘ NHỚ ĐỆM ✨✨✨
-                            SettingsMenuItem(
-                                icon = Icons.Default.Delete,
-                                title = "Dọn bộ nhớ đệm",
-                                onClick = {
-                                    scope.launch(Dispatchers.IO) {
-                                        try {
-                                            deleteCache(context)
-                                            withContext(Dispatchers.Main) {
-                                                Toast.makeText(context, "Đã dọn sạch bộ nhớ đệm!", Toast.LENGTH_SHORT).show()
-                                            }
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                // Actions Section
-                item {
-                    SettingsSectionTitle("Actions")
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Column {
-                            SettingsMenuItem(
-                                icon = Icons.Default.Flag,
-                                title = "Báo cáo sự cố",
-                                onClick = {
-                                    val url = "https://forms.gle/VNsjfURN1jxA3WaU7"
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    SettingsCard {
+                        SettingsMenuItem(
+                            icon = Icons.Default.Delete,
+                            title = "Dọn bộ nhớ đệm",
+                            onClick = {
+                                scope.launch(Dispatchers.IO) {
                                     try {
-                                        context.startActivity(intent)
+                                        deleteCache(context)
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, "Đã dọn sạch bộ nhớ đệm!", Toast.LENGTH_SHORT).show()
+                                        }
                                     } catch (e: Exception) {
                                         e.printStackTrace()
                                     }
                                 }
-                            )
-                            Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
-                            SettingsMenuItem(
-                                icon = Icons.Default.Logout,
-                                title = "Đăng xuất",
-                                textColor = Color(0xFFFF5252),
-                                onClick = {
-                                    navController.navigate(NavDestination.Login.route) {
-                                        popUpTo(0) { inclusive = true }
-                                    }
-                                }
-                            )
-                        }
+                            }
+                        )
+                    }
+                    SectionSpacer()
+                }
+
+                // 4. SECTION: ACTIONS (LOGOUT)
+                item { SettingsSectionTitle("Actions") }
+                item {
+                    SettingsCard {
+                        SettingsMenuItem(
+                            icon = Icons.Default.Flag,
+                            title = "Báo cáo sự cố",
+                            onClick = {
+                                openUrl(context, "https://forms.gle/VNsjfURN1jxA3WaU7")
+                            }
+                        )
+                        SettingsDivider()
+
+                        // ✨ NÚT ĐĂNG XUẤT ✨
+                        SettingsMenuItem(
+                            icon = Icons.Default.Logout,
+                            title = "Đăng xuất",
+                            textColor = Color(0xFFFF5252),
+                            onClick = {
+                                performLogout(context, viewModel, navController)
+                            }
+                        )
                     }
                     Spacer(modifier = Modifier.height(80.dp))
                 }
@@ -230,36 +197,49 @@ fun SettingsScreen(navController: NavController) {
     }
 }
 
-// ✨✨✨ HÀM XÓA CACHE (Helper Function) ✨✨✨
-fun deleteCache(context: Context) {
-    try {
-        val dir = context.cacheDir
-        deleteDir(dir)
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-}
+// ==========================================
+// COMPOSABLE COMPONENTS
+// ==========================================
 
-// Hàm xóa đệ quy thư mục
-fun deleteDir(dir: File?): Boolean {
-    if (dir != null && dir.isDirectory) {
-        val children = dir.list()
-        if (children != null) {
-            for (i in children.indices) {
-                val success = deleteDir(File(dir, children[i]))
-                if (!success) {
-                    return false
-                }
-            }
+@Composable
+fun SettingsTopBar(onBackClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onBackClick) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.Black
+            )
         }
-        return dir.delete()
-    } else if (dir != null && dir.isFile) {
-        return dir.delete()
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = "Cài đặt",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6395EE)
+        )
     }
-    return false
 }
 
-// ... Các Composable phụ khác giữ nguyên ...
+// ✅ SỬA LỖI COLUMNSCOPE TẠI ĐÂY
+@Composable
+fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        content = content
+    )
+}
 
 @Composable
 fun SettingsSectionTitle(title: String) {
@@ -268,7 +248,8 @@ fun SettingsSectionTitle(title: String) {
         fontSize = 18.sp,
         fontWeight = FontWeight.Bold,
         color = Color.Black,
-        modifier = Modifier.padding(vertical = 8.dp)
+        modifier = Modifier
+            .padding(vertical = 8.dp)
     )
 }
 
@@ -287,7 +268,7 @@ fun SettingsMenuItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            icon,
+            imageVector = icon,
             contentDescription = null,
             tint = if (textColor == Color.Black) Color.Gray else textColor,
             modifier = Modifier.size(24.dp)
@@ -296,20 +277,96 @@ fun SettingsMenuItem(
         Spacer(modifier = Modifier.width(16.dp))
 
         Text(
-            title,
+            text = title,
             fontSize = 16.sp,
             color = textColor,
             modifier = Modifier.weight(1f)
         )
 
         Icon(
-            Icons.Default.ChevronRight,
+            imageVector = Icons.Default.ChevronRight,
             contentDescription = "Navigate",
             tint = Color.Gray,
             modifier = Modifier.size(20.dp)
         )
     }
 }
+
+@Composable
+fun SettingsDivider() {
+    Divider(
+        color = Color(0xFFE0E0E0),
+        thickness = 0.5.dp
+    )
+}
+
+@Composable
+fun SectionSpacer() {
+    Spacer(modifier = Modifier.height(24.dp))
+}
+
+// ==========================================
+// HELPER FUNCTIONS (LOGIC)
+// ==========================================
+
+private fun performLogout(
+    context: Context,
+    viewModel: SettingsViewModel,
+    navController: NavController
+) {
+    // 1. Cấu hình Google Sign In
+    val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
+    val googleSignInClient = GoogleSignIn.getClient(context, gso)
+
+    // 2. Thực hiện đăng xuất Google
+    googleSignInClient.signOut().addOnCompleteListener {
+        // 3. Xóa dữ liệu trong máy & Đăng xuất Firebase
+        viewModel.signOut {
+            // 4. Chuyển hướng về màn hình đăng nhập
+            navController.navigate(NavDestination.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+}
+
+private fun openUrl(context: Context, url: String) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+fun deleteCache(context: Context) {
+    try {
+        val dir = context.cacheDir
+        deleteDir(dir)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+fun deleteDir(dir: File?): Boolean {
+    if (dir != null && dir.isDirectory) {
+        val children = dir.list()
+        if (children != null) {
+            for (i in children.indices) {
+                val success = deleteDir(File(dir, children[i]))
+                if (!success) return false
+            }
+        }
+        return dir.delete()
+    } else if (dir != null && dir.isFile) {
+        return dir.delete()
+    }
+    return false
+}
+
+// ==========================================
+// PREVIEW
+// ==========================================
 
 @Preview(showBackground = true)
 @Composable

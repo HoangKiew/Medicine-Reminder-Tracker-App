@@ -21,7 +21,7 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter // ✅ Import thêm để format giờ cho Firebase
+import java.time.format.DateTimeFormatter
 
 class MedicineRepository(
     private val firestore: FirebaseFirestore,
@@ -53,11 +53,18 @@ class MedicineRepository(
         return medicineDao.getMedicineById(medicineId)?.toDomainModel()
     }
 
+    // ✨✨✨ ĐÃ SỬA HÀM NÀY ✨✨✨
+    // Thay vì lọc theo khoảng thời gian (dễ bị mất thuốc nếu quá giờ),
+    // ta lấy TOÀN BỘ lịch trình vì đây là thuốc uống hàng ngày.
     fun getSchedulesForDate(date: LocalDate): Flow<List<Schedule>> {
-        val startOfDay = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
-        val endOfDay = date.plusDays(1).atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000 - 1
+        // Logic cũ (Bị lỗi ẩn thuốc):
+        // val startOfDay = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
+        // val endOfDay = date.plusDays(1).atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000 - 1
+        // return scheduleDao.getSchedulesByDateRange(...)
 
-        return scheduleDao.getSchedulesByDateRange(userId ?: "", startOfDay, endOfDay).map { scheduleEntityList ->
+        // Logic Mới (Hiện tất cả thuốc hàng ngày):
+        // ⚠️ Lưu ý: Đảm bảo bạn đã thêm hàm getAllSchedules vào ScheduleDao như hướng dẫn trước đó
+        return scheduleDao.getAllSchedules(userId ?: "").map { scheduleEntityList ->
             scheduleEntityList.map { it.toDomainModel() }
         }
     }
@@ -72,7 +79,21 @@ class MedicineRepository(
     // II. CÁC HÀM GHI DỮ LIỆU (WRITE OPERATIONS)
     // =========================================================================
 
-    fun signOut() {
+    // ✨✨✨ SỬA: Hàm signOut chuẩn để xóa sạch dữ liệu ✨✨✨
+    suspend fun signOut() {
+        withContext(Dispatchers.IO) {
+            try {
+                // 1. Xóa sạch dữ liệu trong máy trước khi thoát
+                scheduleDao.clearAllSchedules()
+                medicineDao.clearAllMedicines()
+                logEntryDao.clearAllLogs()
+                Log.d("Repository", "✅ Đã dọn sạch dữ liệu cũ trong máy")
+            } catch (e: Exception) {
+                Log.e("Repository", "Lỗi khi dọn dữ liệu: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+        // 2. Sau đó mới đăng xuất Firebase
         auth.signOut()
     }
 
@@ -121,24 +142,21 @@ class MedicineRepository(
         }
     }
 
-    // ✨✨✨ HÀM QUAN TRỌNG ĐÃ ĐƯỢC SỬA ✨✨✨
     suspend fun updateScheduleStatus(medicineId: String, time: LocalTime, status: Boolean) {
         val currentUserId = userId ?: return
 
         withContext(Dispatchers.IO) {
             // 1. Cập nhật vào Room
-            // 🔴 SỬA: Đã XÓA currentUserId ở tham số cuối cùng để khớp với ScheduleDao
             scheduleDao.updateScheduleStatus(medicineId, time, status)
 
             // 2. Cập nhật Firebase
             try {
-                // Format giờ thành HH:mm để tìm chính xác trên Firebase
                 val timeString = time.format(DateTimeFormatter.ofPattern("HH:mm"))
 
                 val snapshot = firestore.collection("users").document(currentUserId)
                     .collection("schedules")
                     .whereEqualTo("medicineId", medicineId)
-                    .whereEqualTo("specificTime", timeString) // Sử dụng chuỗi đã format
+                    .whereEqualTo("specificTime", timeString)
                     .get().await()
 
                 for (document in snapshot.documents) {
@@ -149,7 +167,6 @@ class MedicineRepository(
             }
         }
     }
-
 
     // =========================================================================
     // III. ĐỒNG BỘ DỮ LIỆU TỪ FIREBASE

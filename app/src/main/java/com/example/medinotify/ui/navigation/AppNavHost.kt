@@ -131,7 +131,16 @@ private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHost
     composable(NavDestination.Register.route) {
         RegisterRoute(
             onBack = { navController.popBackStack() },
-            onRegisterSuccess = { navController.navigateToHome() },
+
+            // ✨✨✨ ĐÃ SỬA LẠI ĐOẠN NÀY ✨✨✨
+            // Thay vì vào Home, ta chuyển về Login để người dùng đăng nhập lại
+            onRegisterSuccess = {
+                navController.navigate(NavDestination.Login.route) {
+                    // Xóa màn hình Register khỏi ngăn xếp để khi back không quay lại đây
+                    popUpTo(NavDestination.Register.route) { inclusive = true }
+                }
+            },
+
             onLogin = { navController.popBackStack() }
         )
     }
@@ -165,10 +174,9 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
     }
 
     // Add Medicine Flow
-    // ✅ ĐÃ SỬA: Truyền navController vào StartScreen
     composable(NavDestination.StartAddMedicine.route) {
         StartScreen(
-            navController = navController, // <-- Thêm dòng này
+            navController = navController,
             onStart = {
                 navController.navigate(NavDestination.AddMedicine.route) {
                     launchSingleTop = true

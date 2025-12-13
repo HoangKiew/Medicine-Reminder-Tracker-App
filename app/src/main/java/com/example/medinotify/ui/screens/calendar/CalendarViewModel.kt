@@ -6,11 +6,11 @@ import com.example.medinotify.data.domain.Medicine
 import com.example.medinotify.data.domain.Schedule
 import com.example.medinotify.data.repository.MedicineRepository
 import kotlinx.coroutines.flow.*
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 
-// Lớp data để kết hợp thông tin Schedule và Medicine cho UI
 data class ScheduleWithMedicine(
     val schedule: Schedule,
     val medicine: Medicine?
@@ -20,28 +20,26 @@ class CalendarViewModel(
     private val repository: MedicineRepository
 ) : ViewModel() {
 
-    // --- State: Dùng LocalDate thay vì Calendar ---
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
-    // --- Dữ liệu từ Repository ---
-
-    // Flow để lấy thông tin chi tiết (Schedule + Medicine) cho ngày được chọn
+    // 1. Lấy danh sách thuốc chi tiết cho ngày được chọn
     val schedulesForSelectedDay: StateFlow<List<ScheduleWithMedicine>> = _selectedDate
         .flatMapLatest { date ->
-            // Lấy danh sách Schedule cho ngày được chọn
+            // Lấy TOÀN BỘ lịch
             val schedulesFlow = repository.getSchedulesForDate(date)
-
-            // Lấy tất cả các loại thuốc
             val medicinesFlow = repository.getAllMedicines()
 
-            // Kết hợp hai luồng dữ liệu
             combine(schedulesFlow, medicinesFlow) { schedules, medicines ->
-                // Tạo một Map để tra cứu Medicine theo ID cho hiệu quả
                 val medicineMap = medicines.associateBy { it.medicineId }
 
-                // Ghép mỗi Schedule với Medicine tương ứng
-                schedules.map { schedule ->
+                schedules.filter { schedule ->
+                    // ✨ BỘ LỌC: Chỉ lấy lịch của ngày được chọn ✨
+                    val scheduleDate = Instant.ofEpochMilli(schedule.nextScheduledTimestamp)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                    scheduleDate.isEqual(date)
+                }.map { schedule ->
                     ScheduleWithMedicine(
                         schedule = schedule,
                         medicine = medicineMap[schedule.medicineId]
@@ -55,24 +53,30 @@ class CalendarViewModel(
             initialValue = emptyList()
         )
 
-    // Flow chứa một Set các ngày (kiểu Int) có lịch uống thuốc trong tháng
+    // 2. Xác định những ngày nào trong tháng có lịch uống thuốc (để hiện chấm đỏ)
     val scheduledDaysInMonth: StateFlow<Set<Int>> = selectedDate
-        .map { YearMonth.from(it) } // Chỉ tính toán lại khi tháng thay đổi
+        .map { YearMonth.from(it) }
         .distinctUntilChanged()
         .flatMapLatest { yearMonth ->
-            // Lặp qua từng ngày trong tháng để lấy lịch
-            val daysInMonth = (1..yearMonth.lengthOfMonth()).map { day ->
-                repository.getSchedulesForDate(yearMonth.atDay(day))
-                    .map { schedules ->
-                        // Nếu có lịch, trả về ngày đó. Nếu không, trả về null.
-                        if (schedules.isNotEmpty()) day else null
-                    }
-            }
+            // Lấy TOÀN BỘ lịch trình một lần duy nhất
+            // Lưu ý: repository.getSchedulesForDate giờ trả về tất cả, nên ta truyền ngày nào cũng được
+            repository.getSchedulesForDate(LocalDate.now())
+                .map { allSchedules ->
+                    val daysWithSchedule = mutableSetOf<Int>()
 
-            // Kết hợp kết quả của tất cả các ngày
-            combine(daysInMonth) { dailyResults ->
-                dailyResults.filterNotNull().toSet()
-            }
+                    allSchedules.forEach { schedule ->
+                        // Đổi timestamp ra ngày
+                        val date = Instant.ofEpochMilli(schedule.nextScheduledTimestamp)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+
+                        // Nếu lịch này thuộc tháng đang xem -> Thêm ngày đó vào danh sách
+                        if (YearMonth.from(date) == yearMonth) {
+                            daysWithSchedule.add(date.dayOfMonth)
+                        }
+                    }
+                    daysWithSchedule
+                }
         }
         .stateIn(
             scope = viewModelScope,
@@ -80,20 +84,14 @@ class CalendarViewModel(
             initialValue = emptySet()
         )
 
-
-    // --- Hàm xử lý sự kiện từ UI ---
-
     fun changeMonth(offset: Int) {
         _selectedDate.update { currentDate ->
-            val newDate = currentDate.plusMonths(offset.toLong())
-            // Khi chuyển tháng, mặc định chọn ngày 1 để tránh lỗi
-            newDate.withDayOfMonth(1)
+            currentDate.plusMonths(offset.toLong()).withDayOfMonth(1)
         }
     }
 
     fun onDaySelected(day: Int) {
         _selectedDate.update { currentDate ->
-            // Giữ nguyên tháng và năm, chỉ thay đổi ngày
             currentDate.withDayOfMonth(day)
         }
     }

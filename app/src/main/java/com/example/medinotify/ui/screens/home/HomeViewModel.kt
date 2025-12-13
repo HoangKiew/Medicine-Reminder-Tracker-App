@@ -6,7 +6,9 @@ import com.example.medinotify.data.domain.Schedule
 import com.example.medinotify.data.repository.MedicineRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 // Các data class giữ nguyên
@@ -27,14 +29,13 @@ data class MedicineItem(
 class HomeViewModel(private val repository: MedicineRepository) : ViewModel() {
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())
-
-    // ✨ THÊM MỚI: Biến này dùng để kích hoạt việc tải lại dữ liệu
     private val _refreshTrigger = MutableStateFlow(0)
 
     val uiState: StateFlow<HomeUiState> = combine(_selectedDate, _refreshTrigger) { date, _ ->
-        date // Khi ngày đổi HOẶC trigger đổi -> trả về ngày để flatMap xử lý tiếp
+        date
     }
         .flatMapLatest { date ->
+            // Lấy TẤT CẢ lịch trình (Repository đã sửa ở bước trước)
             val schedulesFlow = repository.getSchedulesForDate(date)
             val medicinesFlow = repository.getAllMedicines()
 
@@ -42,20 +43,31 @@ class HomeViewModel(private val repository: MedicineRepository) : ViewModel() {
                 val medicineMap = medicines.associateBy { it.medicineId }
 
                 val medicineItems = schedules.mapNotNull { schedule ->
+                    // ✨✨✨ BỘ LỌC QUAN TRỌNG ĐỂ SỬA LỖI LẶP ✨✨✨
+                    // 1. Chuyển đổi timestamp của lịch thành LocalDate
+                    val scheduleDate = Instant.ofEpochMilli(schedule.nextScheduledTimestamp)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+
+                    // 2. Chỉ lấy những lịch có ngày trùng với ngày đang chọn (date)
+                    if (!scheduleDate.isEqual(date)) {
+                        return@mapNotNull null // Bỏ qua nếu không phải ngày này
+                    }
+
                     val medicine = medicineMap[schedule.medicineId]
                     if (medicine != null) {
                         MedicineItem(
                             name = medicine.name,
                             description = medicine.dosage,
                             time = schedule.specificTime.format(DateTimeFormatter.ofPattern("HH:mm")),
-                            isTaken = schedule.reminderStatus // Trạng thái xanh/đỏ lấy từ đây
+                            isTaken = schedule.reminderStatus
                         )
                     } else {
                         null
                     }
                 }
 
-                // Sắp xếp theo giờ để danh sách đẹp hơn
+                // Sắp xếp theo giờ
                 val sortedItems = medicineItems.sortedBy { it.time }
 
                 HomeUiState(
@@ -75,7 +87,6 @@ class HomeViewModel(private val repository: MedicineRepository) : ViewModel() {
         _selectedDate.value = date
     }
 
-    // ✨ THÊM MỚI: Hàm này gọi để ép ViewModel tải lại dữ liệu
     fun refreshData() {
         _refreshTrigger.value += 1
     }

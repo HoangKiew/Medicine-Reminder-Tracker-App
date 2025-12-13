@@ -29,7 +29,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+
+// ❌ ĐÃ XÓA: import androidx.lifecycle.viewmodel.compose.viewModel
+// ✅ THÊM MỚI: Import Koin để tiêm ViewModel đúng cách
+import org.koin.androidx.compose.koinViewModel
+
 import com.example.medinotify.ui.screens.auth.components.AuthTextField
 import com.example.medinotify.ui.screens.auth.components.GoogleButton
 import com.example.medinotify.ui.screens.auth.components.PrimaryButton
@@ -41,7 +45,8 @@ fun RegisterRoute(
     onBack: () -> Unit,
     onRegisterSuccess: () -> Unit,
     onLogin: () -> Unit,
-    viewModel: RegisterViewModel = viewModel()
+    // ✨✨✨ QUAN TRỌNG: Đổi viewModel() thành koinViewModel() ✨✨✨
+    viewModel: RegisterViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -51,6 +56,13 @@ fun RegisterRoute(
             Toast.makeText(context, "Đăng ký thành công! Vui lòng đăng nhập.", Toast.LENGTH_SHORT).show()
             viewModel.onNavigationHandled()
             onRegisterSuccess()
+        }
+    }
+
+    // Hiển thị thông báo lỗi (nếu có) khi đăng ký thất bại
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -90,10 +102,10 @@ fun RegisterScreen(
     onGoogleRegister: () -> Unit = onRegister
 ) {
     val isFormFilled = state.name.isNotBlank() &&
-        state.email.isNotBlank() &&
-        state.phone.isNotBlank() &&
-        state.password.isNotBlank() &&
-        state.confirmPassword.isNotBlank()
+            state.email.isNotBlank() &&
+            state.phone.isNotBlank() &&
+            state.password.isNotBlank() &&
+            state.confirmPassword.isNotBlank()
 
     Column(
         modifier = modifier
@@ -272,5 +284,3 @@ private fun RegisterPreview() {
         )
     }
 }
-
-

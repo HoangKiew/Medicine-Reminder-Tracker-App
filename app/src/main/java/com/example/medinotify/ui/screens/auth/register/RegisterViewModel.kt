@@ -3,7 +3,8 @@ package com.example.medinotify.ui.screens.auth.register
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
+import com.example.medinotify.data.auth.AuthRepository // ✅ Import Repository
+import com.example.medinotify.data.auth.AuthResult     // ✅ Import Result
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -22,7 +23,10 @@ data class RegisterUiState(
     val navigateToLogin: Boolean = false
 )
 
-class RegisterViewModel : ViewModel() {
+class RegisterViewModel(
+    // ✅ Tiêm AuthRepository vào constructor để kết nối Firebase
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState = _uiState.asStateFlow()
@@ -84,12 +88,33 @@ class RegisterViewModel : ViewModel() {
                     errorMessage = null
                 )
             }
-            simulateRegisterRequest()
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    navigateToLogin = true
-                )
+
+            // ✨✨✨ GỌI HÀM ĐĂNG KÝ THỰC TẾ TỪ REPOSITORY ✨✨✨
+            val result = authRepository.signUp(
+                email = trimmedEmail,
+                pass = current.password,
+                name = trimmedName
+            )
+
+            when (result) {
+                is AuthResult.Success -> {
+                    // Đăng ký thành công -> Chuyển hướng về màn hình Login
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            navigateToLogin = true
+                        )
+                    }
+                }
+                is AuthResult.Error -> {
+                    // Đăng ký thất bại -> Hiển thị lỗi
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.message
+                        )
+                    }
+                }
             }
         }
     }
@@ -97,10 +122,4 @@ class RegisterViewModel : ViewModel() {
     fun onNavigationHandled() {
         _uiState.update { it.copy(navigateToLogin = false) }
     }
-
-    private suspend fun simulateRegisterRequest() {
-        delay(600)
-    }
 }
-
-
