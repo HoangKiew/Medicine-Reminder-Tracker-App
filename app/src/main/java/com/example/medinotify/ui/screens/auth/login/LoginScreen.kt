@@ -45,6 +45,7 @@ import com.example.medinotify.ui.theme.MedinotifyTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun LoginRoute(
@@ -53,7 +54,7 @@ fun LoginRoute(
     onContinue: () -> Unit,
     onBack: () -> Unit,
     onForgotPassword: () -> Unit = {},
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current

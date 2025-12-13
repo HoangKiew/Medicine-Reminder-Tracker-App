@@ -7,8 +7,6 @@ import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 
 class MediNotifyApplication : Application() {
-
-    // ✅ SỬA LỖI: Di chuyển toàn bộ logic khởi tạo dependency vào Koin
     override fun onCreate() {
         super.onCreate()
 

@@ -6,12 +6,11 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * Lớp Entity cho bảng 'schedules' trong cơ sở dữ liệu Room.
- * Cấu trúc này đã được tái cấu trúc để chỉ chứa thông tin về lịch trình.
+ * Lớp Entity cho bảng 'schedules'.
+ * ✨ ĐÃ SỬA: Thêm giá trị mặc định cho tất cả các trường để Firebase Deserialize thành công.
  */
 @Entity(
     tableName = "schedules",
-    // Nếu một Medicine bị xóa, tất cả các Schedule liên quan cũng sẽ bị xóa.
     foreignKeys = [
         ForeignKey(
             entity = MedicineEntity::class,
@@ -24,15 +23,10 @@ import androidx.room.PrimaryKey
 )
 data class ScheduleEntity(
     @PrimaryKey
-    val scheduleId: String,
-
-    val userId: String,
-    val medicineId: String,
-
-    // Kiểu dữ liệu LocalTime không thể lưu trực tiếp.
-    // Mapper sẽ đảm nhiệm việc chuyển đổi giữa String và LocalTime.
-    val specificTime: String, // Định dạng "HH:mm"
-
-    val nextScheduledTimestamp: Long,
-    val reminderStatus: Boolean
+    var scheduleId: String = "",            // ✅ Giá trị mặc định
+    var userId: String = "",                // ✅ Giá trị mặc định
+    var medicineId: String = "",            // ✅ Giá trị mặc định
+    var specificTime: String = "",          // ✅ Giá trị mặc định (e.g., "10:00")
+    var nextScheduledTimestamp: Long = 0L,  // ✅ Giá trị mặc định
+    var reminderStatus: Boolean = false     // ✅ Giá trị mặc định
 )

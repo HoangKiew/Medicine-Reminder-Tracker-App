@@ -14,7 +14,7 @@ interface ScheduleDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSchedule(schedule: ScheduleEntity)
 
-    /** ✨ Chèn một danh sách lịch (hữu ích khi đồng bộ từ Firebase). */
+    /** Chèn một danh sách lịch (hữu ích khi đồng bộ từ Firebase). */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSchedules(schedules: List<ScheduleEntity>)
 
@@ -28,7 +28,6 @@ interface ScheduleDao {
 
     /**
      * Lấy các lịch trong một khoảng thời gian cho một người dùng cụ thể.
-     * Đây là hàm gây ra lỗi trước đó.
      */
     @Query("""
         SELECT * FROM schedules 
@@ -48,4 +47,8 @@ interface ScheduleDao {
     /** Xóa tất cả lịch liên quan đến một loại thuốc của một người dùng. */
     @Query("DELETE FROM schedules WHERE medicineId = :medicineId AND userId = :userId")
     suspend fun deleteSchedulesByMedicineId(medicineId: String, userId: String)
+
+    /** ✅ BỔ SUNG: Xóa tất cả bản ghi (Dùng để dọn dẹp khi Logout/trước khi Sync) */
+    @Query("DELETE FROM schedules")
+    suspend fun clearAll()
 }

@@ -6,28 +6,15 @@ import com.example.medinotify.data.domain.LogEntry
 import com.example.medinotify.data.domain.Medicine
 import com.example.medinotify.data.repository.MedicineRepository
 import com.example.medinotify.data.model.MedicineHistoryUi
+import com.example.medinotify.data.domain.LogStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-// Giả định LogStatus là object trong file này
-object LogStatus {
-    const val TAKEN = "TAKEN"
-    const val SKIPPED = "SKIPPED"
-}
-
-// Data class cho UI (được cung cấp trước đó)
-data class MedicineHistoryUi(
-    val id: String,
-    val name: String,
-    val dosage: String,
-    val time: String,
-    val isTaken: Boolean,
-    val intakeTime: Long
-)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HistoryViewModel(
@@ -40,36 +27,45 @@ class HistoryViewModel(
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
-    private val userId = repository.getCurrentUserId()
+    // Sử dụng flow để lấy userId một cách an toàn
+    private val userId: Flow<String?> = flow { emit(repository.getCurrentUserId()) }
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
-    // 1. Flow: Lấy LogEntry cho ngày được chọn (sử dụng logic múi giờ đã sửa trong Repository)
+    // 1. Flow: Lấy LogEntry cho ngày được chọn
     private val logEntriesForSelectedDate: Flow<List<LogEntry>> =
-        _selectedDate.flatMapLatest { date ->
-            if (userId == null) {
-                return@flatMapLatest flowOf(emptyList())
+        combine(_selectedDate, userId) { date, uid -> date to uid }
+            .flatMapLatest { (date, uid) ->
+                if (uid == null) {
+                    return@flatMapLatest flowOf(emptyList())
+                }
+                repository.getLogEntriesForDate(date)
             }
-            repository.getLogEntriesForDate(date) // Sử dụng hàm đã đúng logic thời gian
-        }
 
-    // 2. Flow: Mapping và Kết hợp LogEntry với Medicine (đã tối ưu hóa bằng combine)
-    private val mappedHistoryUi: Flow<List<MedicineHistoryUi>> = logEntriesForSelectedDate
-        .combine(repository.getAllMedicines()) { logList, medicineList ->
-            val medicineMap = medicineList.associateBy { it.medicineId }
+    // 2. Flow: Mapping và Kết hợp LogEntry với Medicine Map
+    val filteredHistory: StateFlow<List<MedicineHistoryUi>> =
+        combine(logEntriesForSelectedDate, _searchQuery) { logList, query ->
+
+            // ✅ BƯỚC 1: Lấy Map từ Repository (suspend call)
+            // Khối này đảm bảo các Map được cập nhật/tải nhanh nhất có thể.
+            val nameMap = repository.getMedicineNameMap()
+            val dosageMap = repository.getMedicineDosageMap()
 
             val mappedList = logList.mapNotNull { logEntry ->
-                mapLogEntryToUi(logEntry, medicineMap[logEntry.medicineId])
+                // ✅ BƯỚC 2: Mapping LogEntry sang UI Model bằng Map
+                mapLogEntryToUi(
+                    logEntry = logEntry,
+                    name = nameMap[logEntry.medicineId],
+                    dosage = dosageMap[logEntry.medicineId]
+                )
             }
             // Sắp xếp theo intakeTime giảm dần (mới nhất lên đầu)
-            mappedList.sortedByDescending { it.intakeTime }
-        }
+            val sortedList = mappedList.sortedByDescending { it.intakeTime }
 
-    // 3. Flow: Lọc theo tìm kiếm
-    val filteredHistory: StateFlow<List<MedicineHistoryUi>> =
-        combine(mappedHistoryUi, _searchQuery) { historyList, query ->
+            // ✅ BƯỚC 3: Lọc theo tìm kiếm
             if (query.isBlank()) {
-                historyList
+                sortedList
             } else {
-                historyList.filter { uiItem ->
+                sortedList.filter { uiItem ->
                     uiItem.name.contains(query, ignoreCase = true)
                 }
             }
@@ -87,9 +83,13 @@ class HistoryViewModel(
         _selectedDate.value = newDate
     }
 
-    private fun mapLogEntryToUi(logEntry: LogEntry, medicine: Medicine?): MedicineHistoryUi? {
-        if (medicine == null) return null
+    /**
+     * Hàm mapping LogEntry sang MedicineHistoryUi
+     */
+    private fun mapLogEntryToUi(logEntry: LogEntry, name: String?, dosage: String?): MedicineHistoryUi? {
+        if (name == null || dosage == null) return null
 
+        // Định dạng thời gian uống thuốc thực tế
         val timeString = Instant.ofEpochMilli(logEntry.intakeTime)
             .atZone(ZoneId.systemDefault())
             .toLocalTime()
@@ -97,11 +97,10 @@ class HistoryViewModel(
 
         return MedicineHistoryUi(
             id = logEntry.logId,
-            name = medicine.name,
-            dosage = medicine.dosage,
+            name = name,
+            dosage = dosage,
             time = timeString,
             intakeTime = logEntry.intakeTime,
-            isTaken = logEntry.status == LogStatus.TAKEN // Dùng hằng số String
-        )
+            isTaken = logEntry.status == LogStatus.TAKEN.name        )
     }
 }

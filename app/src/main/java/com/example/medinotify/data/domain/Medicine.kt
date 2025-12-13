@@ -20,5 +20,5 @@ data class Medicine(
 
     val frequency: Frequency = Frequency.DAILY,
     val intervalDays: Int = 0, // Chỉ có giá trị > 0 khi frequency là INTERVAL
-    val daysOfWeek: Set<DayOfWeek> = emptySet() // Chỉ có giá trị khi frequency là SPECIFIC_DAYS
+    val daysOfWeek: List<DayOfWeek> = emptyList() // Chỉ có giá trị khi frequency là SPECIFIC_DAYS
 )

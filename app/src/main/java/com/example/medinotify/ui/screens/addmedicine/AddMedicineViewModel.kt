@@ -232,7 +232,7 @@ class AddMedicineViewModel(
                     frequency = frequency,
                     intervalDays = if (frequency == Frequency.INTERVAL) intervalDays.toIntOrNull() ?: 1 else 0,
                     // Map WeekDay sang Java DayOfWeek để lưu vào Entity
-                    daysOfWeek = if (frequency == Frequency.SPECIFIC_DAYS) selectedDays.map { it.javaDayOfWeek }.toSet() else emptySet()
+                    daysOfWeek = if (frequency == Frequency.SPECIFIC_DAYS) selectedDays.map { it.javaDayOfWeek }.toList() else emptyList()
                 )
 
                 // 3. ✅ SỬ DỤNG HÀM MỚI: Tạo danh sách Schedule lặp lại

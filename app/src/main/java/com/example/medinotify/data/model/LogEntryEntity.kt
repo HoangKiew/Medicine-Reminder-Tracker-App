@@ -1,31 +1,19 @@
-package com.example.medinotify.data.model // Hoặc tốt hơn là: com.example.medinotify.data.local
+package com.example.medinotify.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.Date
 
+/**
+ * Lớp Entity cho bảng 'log_entries'.
+ * ✨ ĐÃ SỬA: Thêm giá trị mặc định cho tất cả các trường để Firebase Deserialize thành công.
+ */
 @Entity(tableName = "log_entries")
 data class LogEntryEntity(
-    // ✅ SỬA 1: Dùng 'logId' làm Khóa chính (@PrimaryKey) cho nhất quán.
     @PrimaryKey
-    val logId: String,
-
-    // ✅ SỬA 2: Thêm cột 'userId' để biết log này thuộc về người dùng nào.
-    // Đây là cột bắt buộc để lọc dữ liệu.
-    val userId: String,
-
-    // ID của loại thuốc đã được ghi nhận.
-    val medicineId: String,
-
-    // ✅ SỬA 3: Giữ lại 'medicineName' để hiển thị nhanh trên UI mà không cần join bảng.
-    val medicineName: String,
-
-    // ✅ SỬA 4: Hợp nhất 'scheduledTime' và 'actualTime' thành một cột duy nhất 'intakeTime'.
-    // Một bản ghi lịch sử chỉ cần biết thời gian hành động xảy ra.
-    // Kiểu dữ liệu là Date để Room tự động xử lý.
-    val intakeTime: Long,
-
-    // ✅ SỬA 5: 'status' không nên có giá trị mặc định trong Entity.
-    // Giá trị này sẽ được cung cấp khi tạo LogEntry.
-    val status: String // Ví dụ: "TAKEN", "SKIPPED"
+    var logId: String = "",        // ✅ Giá trị mặc định
+    var userId: String = "",       // ✅ Giá trị mặc định
+    var medicineId: String = "",   // ✅ Giá trị mặc định
+    var medicineName: String = "", // ✅ Giá trị mặc định
+    var intakeTime: Long = 0L,     // ✅ Giá trị mặc định
+    var status: String = ""        // ✅ Giá trị mặc định (Lưu chuỗi "TAKEN" hoặc "SKIPPED")
 )

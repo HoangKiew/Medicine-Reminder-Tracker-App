@@ -5,7 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medinotify.data.auth.AuthRepository
 import com.example.medinotify.data.auth.AuthResult
-import com.example.medinotify.data.auth.FirebaseAuthRepository
+// ✅ IMPORT MedicineRepository
+import com.example.medinotify.data.repository.MedicineRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -21,7 +22,9 @@ data class LoginUiState(
 )
 
 class LoginViewModel(
-    private val authRepository: AuthRepository = FirebaseAuthRepository()
+    // ✅ THÊM dependency MedicineRepository
+    private val authRepository: AuthRepository,
+    private val repository: MedicineRepository // <-- Cần thiết cho việc đồng bộ dữ liệu
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -38,6 +41,18 @@ class LoginViewModel(
     fun onTogglePasswordVisibility() {
         _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
     }
+
+    fun onSuccessConsumed() {
+        _uiState.update { it.copy(isSuccess = false) }
+    }
+
+    fun onExternalLoginError(message: String) {
+        _uiState.update { it.copy(isLoading = false, errorMessage = message) }
+    }
+
+    // =========================================================================
+    // LOGIC ĐĂNG NHẬP THƯỜNG
+    // =========================================================================
 
     fun login() {
         val email = _uiState.value.email.trim()
@@ -58,11 +73,20 @@ class LoginViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             when (val result = authRepository.signIn(email, password)) {
-                is AuthResult.Success -> _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                is AuthResult.Success -> {
+                    // ✅ BƯỚC ĐỒNG BỘ: Tải dữ liệu từ Firebase về Room sau khi đăng nhập thành công
+                    //
+                    repository.syncDataFromFirebase()
+                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                }
                 is AuthResult.Error -> _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
             }
         }
     }
+
+    // =========================================================================
+    // LOGIC ĐĂNG NHẬP VỚI GOOGLE
+    // =========================================================================
 
     fun loginWithGoogle(idToken: String?) {
         if (idToken.isNullOrBlank()) {
@@ -72,19 +96,13 @@ class LoginViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             when (val result = authRepository.signInWithGoogle(idToken)) {
-                is AuthResult.Success -> _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                is AuthResult.Success -> {
+                    // ✅ BƯỚC ĐỒNG BỘ: Tải dữ liệu từ Firebase về Room sau khi đăng nhập thành công
+                    repository.syncDataFromFirebase()
+                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                }
                 is AuthResult.Error -> _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
             }
         }
     }
-
-    fun onSuccessConsumed() {
-        _uiState.update { it.copy(isSuccess = false) }
-    }
-
-    fun onExternalLoginError(message: String) {
-        _uiState.update { it.copy(isLoading = false, errorMessage = message) }
-    }
 }
-
-

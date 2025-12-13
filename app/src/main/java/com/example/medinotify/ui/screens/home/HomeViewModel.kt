@@ -55,18 +55,11 @@ class HomeViewModel(private val repository: MedicineRepository) : ViewModel() {
                         val medicine = medicineMap[schedule.medicineId]
                         if (medicine != null) {
 
-                            // ⭐️ LOGIC CHÍNH SỬA LỖI ĐẾM: Đối chiếu Schedule với Log Entries
-                            // Lý tưởng, LogEntry nên có scheduleId, nhưng vì LogEntry chỉ có intakeTime,
-                            // chúng ta phải đối chiếu bằng medicineId và Timestamp.
-
                             // Lấy Timestamp của Schedule
                             val scheduleTimeMillis = schedule.nextScheduledTimestamp
 
                             // ⭐️ KIỂM TRA TRẠNG THÁI ĐÃ UỐNG (isTaken):
                             val isTaken = logEntries.any { logEntry ->
-                                // Giả định logEntry được coi là khớp nếu:
-                                // 1. Cùng medicineId
-                                // 2. intakeTime của log nằm trong khoảng chấp nhận được so với scheduleTime (ví dụ: ± 2 giờ)
                                 val timeDifference = Math.abs(logEntry.intakeTime - scheduleTimeMillis)
                                 val maxAcceptableDiff = TimeUnit.HOURS.toMillis(2) // Chấp nhận uống sớm/muộn 2 tiếng
 
@@ -85,7 +78,6 @@ class HomeViewModel(private val repository: MedicineRepository) : ViewModel() {
                             null
                         }
                     }
-                // Tạo ra một HomeUiState hoàn chỉnh
                 HomeUiState(
                     selectedDate = date,
                     medicineSchedules = medicineItems,

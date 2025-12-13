@@ -17,10 +17,10 @@ interface LogEntryDao {
     suspend fun insertLogEntry(logEntry: LogEntryEntity)
 
     /**
-     * Chèn một danh sách LogEntry (hữu ích khi đồng bộ từ Firebase).
+     * ✅ ĐỔI TÊN/SỬA: Chèn một danh sách LogEntry (Đảm bảo tên khớp với Repository).
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertLogEntries(logEntries: List<LogEntryEntity>)
+    suspend fun insertAll(logEntries: List<LogEntryEntity>) // Đổi tên thành insertAll (hoặc giữ insertLogEntries nếu Repository gọi là thế)
 
     /**
      * Lấy tất cả lịch sử uống thuốc trong một khoảng thời gian CHO MỘT NGƯỜI DÙNG.
@@ -40,8 +40,7 @@ interface LogEntryDao {
 
     /**
      * Cập nhật trạng thái uống thuốc và thời gian thực tế đã uống.
-     * Hàm này có thể không cần thiết nếu bạn luôn chèn bản ghi mới.
-     * Nếu giữ lại, nó cần được sửa cho đúng.
+     * (Hàm này ít dùng nếu bạn luôn chèn bản ghi mới, nhưng giữ lại)
      */
     @Query("""
         UPDATE log_entries 
@@ -57,6 +56,7 @@ interface LogEntryDao {
     @Query("SELECT * FROM log_entries WHERE intakeTime >= :startTime AND intakeTime < :endTime AND userId = :userId ORDER BY intakeTime DESC")
     fun getLogEntriesBetween(startTime: Long, endTime: Long, userId: String): Flow<List<LogEntryEntity>>
 
+    /** ✅ BỔ SUNG: Xóa tất cả bản ghi (Dùng để dọn dẹp khi Logout/trước khi Sync) */
+    @Query("DELETE FROM log_entries")
+    suspend fun clearAll()
 }
-
-
