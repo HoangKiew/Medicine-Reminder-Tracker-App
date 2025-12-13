@@ -53,6 +53,7 @@ dependencies {
     val koin_version = "3.5.3"
 
     implementation("androidx.work:work-runtime-ktx:$workVersion")
+    implementation("com.google.code.gson:gson:2.10.1")
 
     // Compose
     implementation("androidx.compose.material:material-icons-extended")

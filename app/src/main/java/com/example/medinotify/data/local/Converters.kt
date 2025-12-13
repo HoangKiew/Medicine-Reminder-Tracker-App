@@ -6,10 +6,7 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Date
 
-/**
- * Bộ chuyển đổi kiểu dữ liệu cho Room.
- * ✅ ĐÃ SỬA: Đồng bộ định dạng giờ thành "HH:mm" để khớp với Database.
- */
+
 class Converters {
 
     // ================== HỖ TRỢ KIỂU CŨ (java.util.Date) ==================
