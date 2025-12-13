@@ -1,6 +1,5 @@
 package com.example.medinotify.ui.screens.addmedicine
 
-import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -11,7 +10,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,62 +24,32 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import java.text.SimpleDateFormat
-import java.util.*
+import org.koin.androidx.compose.koinViewModel
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import androidx.compose.material.icons.Icons
+import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Dùng cho FlowRow (ví dụ)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun AddMedicineScreen(navController: NavController) {
+fun AddMedicineScreen(
+    navController: NavController,
+    // TIÊM VIEWMODEL BẰNG KOIN
+    viewModel: AddMedicineViewModel = koinViewModel()
+) {
 
-    // ================== STATES ==================
-    var medicineName by remember { mutableStateOf("") }
-    var medicineType by remember { mutableStateOf("Chọn dạng thuốc") }
-    var dosage by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("") }
-
-    var reminderDate by remember { mutableStateOf("") }
-    var reminderTime by remember { mutableStateOf("") }
-
-    var selectedDay by remember { mutableStateOf("") }
-    var selectedHour by remember { mutableStateOf("") }
-    var selectedAmPm by remember { mutableStateOf("") }
-
-    var enableReminder by remember { mutableStateOf(false) }
-
+    // ================== HELPER & STATES CẦN THIẾT ==================
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
-    // ================== HELPER ==================
-    fun getDayName(year: Int, month: Int, day: Int): String {
-        val sdf = SimpleDateFormat("EEE", Locale.US)
-        val c = Calendar.getInstance()
-        c.set(year, month, day)
-        return sdf.format(c.time)
-    }
+    // Lắng nghe thông báo từ ViewModel
+    val uiMessage by rememberUpdatedState(viewModel.uiMessage)
 
-    // ================== LISTENERS ==================
+    // Listener cho Time Picker để CHỌN GIỜ NHẮC NHỞ
     val timePicker = TimePickerDialog.OnTimeSetListener { _, h, min ->
-        val ampm = if (h >= 12) "PM" else "AM"
-        val hour12 = if (h == 0) 12 else if (h > 12) h - 12 else h
-
-        selectedHour = String.format(Locale.getDefault(), "%02d:%02d", hour12, min)
-        selectedAmPm = ampm
-        reminderTime = "$selectedHour $selectedAmPm"
-    }
-
-    val datePicker = DatePickerDialog.OnDateSetListener { _, y, m, d ->
-        reminderDate = "$d/${m + 1}/$y"
-        selectedDay = getDayName(y, m, d)
-
-        // Sau khi chọn ngày -> chọn giờ
-        TimePickerDialog(
-            context,
-            timePicker,
-            calendar.get(Calendar.HOUR_OF_DAY),
-            calendar.get(Calendar.MINUTE),
-            false
-        ).show()
+        val newTime = LocalTime.of(h, min)
+        viewModel.addSpecificTime(newTime)
     }
 
     // ================== COLORS ==================
@@ -99,21 +69,37 @@ fun AddMedicineScreen(navController: NavController) {
 
     val types = listOf("Viên nén", "Viên nang", "Xi-rô", "Thuốc nước")
 
+    // --- Xử lý Toast (Lắng nghe uiMessage từ ViewModel) ---
+    LaunchedEffect(uiMessage) {
+        uiMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+
+            // Nếu lưu thành công, popBackStack
+            if (message.contains("thành công")) {
+                navController.popBackStack()
+            }
+
+            viewModel.clearUiMessage() // Xóa message sau khi hiển thị
+        }
+    }
+
+
     // ================== UI ==================
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)   // ⭐ NỀN TRẮNG
+            .background(Color.White)
     ) {
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(18.dp)
+                .padding(horizontal = 18.dp, vertical = 8.dp)
                 .verticalScroll(rememberScrollState())
         ) {
 
             // HEADER
+            // ... (Code Header giữ nguyên) ...
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
@@ -134,6 +120,7 @@ fun AddMedicineScreen(navController: NavController) {
 
                 Spacer(Modifier.width(48.dp))
             }
+            // ...
 
             Spacer(Modifier.height(10.dp))
 
@@ -148,13 +135,13 @@ fun AddMedicineScreen(navController: NavController) {
 
             Spacer(Modifier.height(20.dp))
 
-            // NAME
+            // NAME (Dùng State của ViewModel)
             OutlinedTextField(
-                value = medicineName,
-                onValueChange = { medicineName = it },
+                value = viewModel.name,
+                onValueChange = viewModel::onNameChange,
                 label = {
                     Row {
-                        Text("Tên thuốc"); if (medicineName.isEmpty()) Text(
+                        Text("Tên thuốc"); if (viewModel.name.isEmpty()) Text(
                         " *",
                         color = Color.Red
                     )
@@ -167,7 +154,7 @@ fun AddMedicineScreen(navController: NavController) {
 
             Spacer(Modifier.height(15.dp))
 
-            // DROPDOWN
+            // DROPDOWN (TYPE)
             var expanded by remember { mutableStateOf(false) }
 
             ExposedDropdownMenuBox(
@@ -175,12 +162,12 @@ fun AddMedicineScreen(navController: NavController) {
                 onExpandedChange = { expanded = !expanded }
             ) {
                 OutlinedTextField(
-                    value = medicineType,
+                    value = viewModel.medicineType,
                     onValueChange = {},
                     readOnly = true,
                     label = {
                         Row {
-                            Text("Loại thuốc"); if (medicineType == "Chọn dạng thuốc") Text(
+                            Text("Loại thuốc"); if (viewModel.medicineType == "Chọn dạng thuốc") Text(
                             " *",
                             color = Color.Red
                         )
@@ -202,7 +189,7 @@ fun AddMedicineScreen(navController: NavController) {
                         DropdownMenuItem(
                             text = { Text(it) },
                             onClick = {
-                                medicineType = it
+                                viewModel.onTypeChange(it) // Cập nhật ViewModel
                                 expanded = false
                             }
                         )
@@ -212,12 +199,12 @@ fun AddMedicineScreen(navController: NavController) {
 
             Spacer(Modifier.height(15.dp))
 
-            // DOSAGE
+            // DOSAGE (Dùng State của ViewModel)
             OutlinedTextField(
-                value = dosage,
-                onValueChange = { dosage = it },
+                value = viewModel.dosage,
+                onValueChange = viewModel::onDosageChange,
                 label = {
-                    Row { Text("Liều lượng"); if (dosage.isEmpty()) Text(" *", color = Color.Red) }
+                    Row { Text("Liều lượng"); if (viewModel.dosage.isEmpty()) Text(" *", color = Color.Red) }
                 },
                 placeholder = { Text("Ví dụ: 500mg", color = placeholderGray) },
                 modifier = Modifier.fillMaxWidth(),
@@ -226,12 +213,12 @@ fun AddMedicineScreen(navController: NavController) {
 
             Spacer(Modifier.height(15.dp))
 
-            // QUANTITY
+            // QUANTITY (Dùng State của ViewModel)
             OutlinedTextField(
-                value = quantity,
-                onValueChange = { if (it.all { ch -> ch.isDigit() }) quantity = it },
+                value = viewModel.quantity,
+                onValueChange = viewModel::onQuantityChange,
                 label = {
-                    Row { Text("Số lượng"); if (quantity.isEmpty()) Text(" *", color = Color.Red) }
+                    Row { Text("Số lượng"); if (viewModel.quantity.isEmpty()) Text(" *", color = Color.Red) }
                 },
                 placeholder = { Text("Ví dụ: 10", color = placeholderGray) },
                 modifier = Modifier.fillMaxWidth(),
@@ -246,120 +233,13 @@ fun AddMedicineScreen(navController: NavController) {
 
             Spacer(Modifier.height(12.dp))
 
-            // REMINDER INPUT
-            if (!enableReminder) {
-
-                // DATE
-                OutlinedTextField(
-                    value = reminderDate,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Ngày") },
-                    placeholder = { Text("dd/mm/yyyy", color = placeholderGray) },
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.DateRange, null,
-                            tint = mainPink,
-                            modifier = Modifier.clickable {
-                                DatePickerDialog(
-                                    context, datePicker,
-                                    calendar.get(Calendar.YEAR),
-                                    calendar.get(Calendar.MONTH),
-                                    calendar.get(Calendar.DAY_OF_MONTH)
-                                ).show()
-                            }
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            DatePickerDialog(
-                                context, datePicker,
-                                calendar.get(Calendar.YEAR),
-                                calendar.get(Calendar.MONTH),
-                                calendar.get(Calendar.DAY_OF_MONTH)
-                            ).show()
-                        },
-                    colors = transparentColors
-                )
-
-                Spacer(Modifier.height(15.dp))
-
-                // TIME
-                OutlinedTextField(
-                    value = reminderTime,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Giờ") },
-                    placeholder = { Text("00:00 AM/PM", color = placeholderGray) },
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.AccessTime, null,
-                            tint = mainPink,
-                            modifier = Modifier.clickable {
-                                TimePickerDialog(
-                                    context, timePicker,
-                                    calendar.get(Calendar.HOUR_OF_DAY),
-                                    calendar.get(Calendar.MINUTE),
-                                    false
-                                ).show()
-                            }
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            TimePickerDialog(
-                                context, timePicker,
-                                calendar.get(Calendar.HOUR_OF_DAY),
-                                calendar.get(Calendar.MINUTE),
-                                false
-                            ).show()
-                        },
-                    colors = transparentColors
-                )
-
-            } else {
-
-                // PREVIEW
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(softPink, RoundedCornerShape(12.dp))
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(selectedDay, Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                    Text(selectedHour, Modifier.weight(1f))
-                    Text(selectedAmPm, Modifier.weight(0.6f))
-
-                    Button(
-                        onClick = {
-                            DatePickerDialog(
-                                context, datePicker,
-                                calendar.get(Calendar.YEAR),
-                                calendar.get(Calendar.MONTH),
-                                calendar.get(Calendar.DAY_OF_MONTH)
-                            ).show()
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(Color(0xFFFFA500)),
-                        modifier = Modifier.height(40.dp)
-                    ) {
-                        Text("Edit", color = Color.White)
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(18.dp))
-
-            // SWITCH
+            // SWITCH (Bật/Tắt nhắc nhở)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Bật báo thức", color = Color.Gray)
                 Spacer(Modifier.weight(1f))
                 Switch(
-                    checked = enableReminder,
-                    onCheckedChange = { enableReminder = it },
+                    checked = viewModel.enableReminder,
+                    onCheckedChange = viewModel::onEnableReminderChange,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = mainPink,
                         checkedTrackColor = mainPink.copy(alpha = 0.4f)
@@ -367,24 +247,48 @@ fun AddMedicineScreen(navController: NavController) {
                 )
             }
 
+            Spacer(Modifier.height(18.dp))
+
+            // REMINDER INPUT (Chỉ hiển thị khi bật nhắc nhở)
+            if (viewModel.enableReminder) {
+                // Nút Thêm Giờ
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Giờ uống (${viewModel.specificTimes.size} lần):", color = blueTitle, fontSize = 16.sp)
+                    Spacer(Modifier.weight(1f))
+
+                    Button(onClick = {
+                        TimePickerDialog(
+                            context,
+                            timePicker, // Dùng TimePicker để chọn giờ uống
+                            calendar.get(Calendar.HOUR_OF_DAY),
+                            calendar.get(Calendar.MINUTE),
+                            true // Dùng 24-giờ để đơn giản hóa logic
+                        ).show()
+                    }) {
+                        Text("Thêm giờ")
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // HIỂN THỊ CÁC GIỜ ĐÃ CHỌN
+                FlowRow(Modifier.fillMaxWidth()) {
+                    viewModel.specificTimes.forEach { time ->
+                        TimeChip(time = time, onRemove = viewModel::removeSpecificTime, mainColor = mainPink)
+                    }
+                    if (viewModel.specificTimes.isEmpty()) {
+                        Text("Chưa có giờ nhắc nhở.", color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+            }
+
+
             Spacer(Modifier.height(30.dp))
 
             // SAVE BUTTON
             Button(
-                onClick = {
-                    if (
-                        medicineName.isEmpty() ||
-                        medicineType == "Chọn dạng thuốc" ||
-                        dosage.isEmpty() ||
-                        quantity.isEmpty()
-                    ) {
-                        Toast.makeText(context, "Vui lòng nhập đủ thông tin!", Toast.LENGTH_SHORT)
-                            .show()
-                    } else {
-                        Toast.makeText(context, "Đã lưu thuốc!", Toast.LENGTH_SHORT).show()
-                        navController.popBackStack()
-                    }
-                },
+                // GỌI VIEWMODEL ĐỂ LƯU DỮ LIỆU
+                onClick = viewModel::saveMedicine,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(55.dp),
@@ -395,6 +299,32 @@ fun AddMedicineScreen(navController: NavController) {
             }
 
             Spacer(Modifier.height(40.dp))
+        }
+    }
+}
+
+// Hàm composable để hiển thị giờ uống
+@Composable
+fun TimeChip(time: LocalTime, onRemove: (LocalTime) -> Unit, mainColor: Color) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = mainColor.copy(alpha = 0.1f),
+        modifier = Modifier.padding(end = 8.dp, bottom = 8.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+        ) {
+            Text(time.format(DateTimeFormatter.ofPattern("HH:mm")), fontSize = 14.sp, color = mainColor)
+            Icon(
+                Icons.Default.Close,
+                contentDescription = "Xóa giờ",
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(16.dp)
+                    .clickable { onRemove(time) },
+                tint = Color.Gray
+            )
         }
     }
 }

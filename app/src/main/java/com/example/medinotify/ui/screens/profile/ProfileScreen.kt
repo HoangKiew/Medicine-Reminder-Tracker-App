@@ -1,6 +1,5 @@
 package com.example.medinotify.ui.screens.profile
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -15,23 +14,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.medinotify.R
-import com.example.medinotify.ui.navigation.NavDestination
+import coil.compose.AsyncImage // ✨ Giữ lại import này
+import coil.request.ImageRequest // ✨ Giữ lại import này
+import org.koin.androidx.compose.koinViewModel
 
-val PrimaryBlue = Color(0xFF6395EE)
-val LightBlueAccent = PrimaryBlue.copy(alpha = 0.1f)
+// ✅ XÓA BỎ IMPORT SAI: import androidx.privacysandbox.tools.core.generator.build
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen(
+    navController: NavController,
+    viewModel: ProfileViewModel = koinViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
     Scaffold(
         containerColor = Color(0xFFF5F5F5)
     ) { paddingValues ->
@@ -40,31 +43,27 @@ fun ProfileScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Top Bar với nút back và title
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
                     .padding(horizontal = 16.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(
-                    onClick = { navController.popBackStack() }
-                ) {
-                    Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.Black
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Hồ sơ cá nhân", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C60FF))
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Text(
-                    "Hồ sơ cá nhân",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryBlue
-                )
+                // Nút đăng xuất
+                IconButton(onClick = { viewModel.signOut() }) {
+                    Icon(Icons.Default.Logout, contentDescription = "Logout", tint = Color.Red)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -77,74 +76,52 @@ fun ProfileScreen(navController: NavController) {
                     .padding(vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Avatar với border xanh và icon edit
-                Box(
-                    contentAlignment = Alignment.BottomEnd
-                ) {
+                Box(contentAlignment = Alignment.BottomEnd) {
                     Box(
                         modifier = Modifier
                             .size(120.dp)
-                            .border(3.dp, PrimaryBlue, CircleShape) // Dùng màu xanh mới
+                            .border(3.dp, Color(0xFF2C60FF), CircleShape)
                             .padding(4.dp)
                             .clip(CircleShape)
-                            .background(LightBlueAccent), // Dùng màu xanh nhạt
+                            .background(Color(0xFFE3F2FD)),
                         contentAlignment = Alignment.Center
                     ) {
-
-                        Icon(
-                            Icons.Default.Person,
+                        // Hiển thị ảnh người dùng thật bằng Coil
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(uiState.photoUrl)
+                                .crossfade(true)
+                                .build(),
                             contentDescription = "Avatar",
-                            modifier = Modifier.size(80.dp),
-                            tint = PrimaryBlue
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                            placeholder = rememberVectorPainter(Icons.Default.Person),
+                            error = rememberVectorPainter(Icons.Default.Person)
                         )
                     }
 
-                    // Edit button trên avatar
-                    IconButton(
-                        onClick = {
-                            // TODO: Thêm logic điều hướng đến màn hình chỉnh sửa ảnh đại diện nếu có
-                        },
+                    // Edit button
+                    Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(PrimaryBlue, CircleShape),
+                            .background(Color(0xFF2C60FF), CircleShape),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = "Edit Avatar",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // User name
-                Text(
-                    "User123",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
+                Text(uiState.userName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 Spacer(modifier = Modifier.height(4.dp))
 
                 // Email với verified icon
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "User123@gmail.com",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = "Verified",
-                        tint = Color(0xFF4CAF50),
-                        modifier = Modifier.size(16.dp)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(uiState.email, fontSize = 14.sp, color = Color.Gray)
+                    if (uiState.isEmailVerified) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Default.CheckCircle, contentDescription = "Verified", tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                    }
                 }
             }
 
@@ -157,99 +134,38 @@ fun ProfileScreen(navController: NavController) {
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Username field
-                ProfileInfoField(
-                    icon = Icons.Default.Person,
-                    value = "User123"
-                )
-
-                // Date of birth field
-                ProfileInfoField(
-                    icon = Icons.Default.DateRange,
-                    value = "01/01/1988"
-                )
-
-                // Email field
-                ProfileInfoField(
-                    icon = Icons.Default.Email,
-                    value = "User123@mail.com"
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-                    navController.navigate(NavDestination.EditProfile.route)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryBlue
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    Icons.Default.Edit,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Chỉnh sửa hồ sơ",
-                    fontSize = 16.sp,
-                    color = Color.White,
-                    fontWeight = FontWeight.SemiBold
-                )
+                // Sử dụng Composable đã được tạo
+                ProfileInfoField(icon = Icons.Default.Person, value = uiState.userName)
+                ProfileInfoField(icon = Icons.Default.DateRange, value = uiState.dateOfBirth)
+                ProfileInfoField(icon = Icons.Default.Email, value = uiState.email)
             }
         }
     }
 }
 
+// ✅ THÊM COMPOSABLE BỊ THIẾU
 @Composable
-fun ProfileInfoField(
-    icon: ImageVector,
-    value: String
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+private fun ProfileInfoField(icon: ImageVector, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White, RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = Color.Gray,
-                modifier = Modifier.size(24.dp)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Text(
-                value,
-                fontSize = 16.sp,
-                color = Color.Black
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color(0xFF2C60FF),
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = value,
+            fontSize = 16.sp,
+            color = Color.Black,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
-
-// ==================== PREVIEW ====================
-
-@Preview(showBackground = true)
-@Composable
-fun ProfileScreenPreview() {
-    MaterialTheme {
-        ProfileScreen(navController = rememberNavController())
-    }
-}

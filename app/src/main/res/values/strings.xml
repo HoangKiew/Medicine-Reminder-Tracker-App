@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">medinotify</string>
+
+    <string name="default_web_client_id" translatable="false">867093055714-06hp0rg50gfurcodemts8lb55kq4d458.apps.googleusercontent.com</string>
 </resources>

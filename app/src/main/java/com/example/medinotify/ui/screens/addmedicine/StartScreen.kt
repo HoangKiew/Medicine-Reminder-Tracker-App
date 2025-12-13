@@ -19,16 +19,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medinotify.R
-@Composable
-fun StartScreen(onStart: () -> Unit) {
+import org.koin.androidx.compose.koinViewModel // ✨ THÊM IMPORT
 
+@Composable
+fun StartScreen(
+    onStart: () -> Unit,
+    viewModel: StartViewModel = koinViewModel() // ✨ THÊM VIEWMODEL
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)   // ⭐ NỀN TRẮNG
     ) {
 
-        // =================== TOP ICONS ===================
+        // =================== TOP ICONS (Có thể sẽ được thay bằng TopAppBar chung) ===================
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -36,14 +40,12 @@ fun StartScreen(onStart: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Icon(
                 imageVector = Icons.Filled.DateRange,
                 contentDescription = null,
                 tint = Color(0xFFFF5A5A),
                 modifier = Modifier.size(28.dp)
             )
-
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.Person,

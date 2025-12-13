@@ -18,7 +18,6 @@ import com.example.medinotify.ui.screens.history.MedicineHistoryDetailScreen
 import com.example.medinotify.ui.screens.history.MedicineHistoryScreen
 import com.example.medinotify.ui.screens.home.HomeScreen
 import com.example.medinotify.ui.screens.profile.ProfileScreen
-import com.example.medinotify.ui.screens.profile.EditProfileScreen
 import com.example.medinotify.ui.screens.settings.SettingsScreen
 import com.example.medinotify.ui.screens.auth.login.LoginRoute
 import com.example.medinotify.ui.screens.auth.password.ForgotPasswordRoute
@@ -29,10 +28,8 @@ import com.example.medinotify.ui.screens.auth.register.RegisterRoute
 import com.example.medinotify.ui.screens.auth.splash.SplashScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-import com.example.medinotify.ui.screens.reminder.MedicineReminderScreen
 import com.example.medinotify.ui.screens.settings.account.NotificationsScreen
-// Thêm import cho màn hình Trợ giúp & Hỗ trợ
-import com.example.medinotify.ui.screens.settings.HelpAndSupportScreen
+import com.example.medinotify.ui.screens.settings.account.SecurityScreen
 
 @Composable
 fun MedinotifyApp(
@@ -44,7 +41,9 @@ fun MedinotifyApp(
 
     val showBottomBar = currentRoute in listOf(
         NavDestination.Home.route,
-        NavDestination.StartAddMedicine.route
+        NavDestination.Calendar.route,
+        NavDestination.MedicineHistory.route,
+        NavDestination.Profile.route
     )
 
     Scaffold(
@@ -54,10 +53,9 @@ fun MedinotifyApp(
             }
         }
     ) { paddingValues ->
-
         NavHost(
             navController = navController,
-            startDestination = NavDestination.startDestination,
+            startDestination = NavDestination.Splash.route,
             modifier = Modifier.padding(paddingValues)
         ) {
             authGraph(navController)
@@ -74,12 +72,13 @@ private fun NavHostController.navigateToHome() {
 }
 
 // ==================== AUTH GRAPH ====================
-
 private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHostController) {
     composable(NavDestination.Splash.route) {
         SplashScreen(
+            // ✅ SỬA LỖI 1: Đã xóa tham số 'onStart' không tồn tại
             onLogin = { navController.navigate(NavDestination.Login.route) },
             onRegister = { navController.navigate(NavDestination.Register.route) }
+            // Gợi ý: bạn có thể cần thêm onContinue = { navController.navigateToHome() }
         )
     }
 
@@ -115,9 +114,11 @@ private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHost
 
     composable(NavDestination.ResetPasswordSuccess.route) {
         ResetPasswordSuccessScreen(
-            onBackToLogin = { navController.navigate(NavDestination.Login.route) {
-                popUpTo(NavDestination.Splash.route) { inclusive = true }
-            } }
+            onBackToLogin = {
+                navController.navigate(NavDestination.Login.route) {
+                    popUpTo(NavDestination.Splash.route) { inclusive = true }
+                }
+            }
         )
     }
 
@@ -143,24 +144,28 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         CalendarScreen(navController)
     }
 
+    // Medicine History
     composable(NavDestination.MedicineHistory.route) {
         MedicineHistoryScreen(navController)
     }
 
+    // Medicine History Detail (with parameter)
     composable(
         route = NavDestination.MedicineHistoryDetail.route,
         arguments = listOf(navArgument("date") { type = NavType.StringType })
     ) { backStackEntry ->
         val date = backStackEntry.arguments?.getString("date") ?: ""
-        MedicineHistoryDetailScreen(navController, date)
+        MedicineHistoryDetailScreen(navController)
     }
 
+    // Add Medicine Flow
     composable(NavDestination.StartAddMedicine.route) {
-        StartScreen {
+        // ✅ SỬA LỖI 2: Truyền lambda vào đúng tham số 'onStart'
+        StartScreen(onStart = {
             navController.navigate(NavDestination.AddMedicine.route) {
                 launchSingleTop = true
             }
-        }
+        })
     }
 
     composable(NavDestination.AddMedicine.route) {
@@ -172,24 +177,17 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         ProfileScreen(navController = navController)
     }
 
-    composable(NavDestination.EditProfile.route) {
-        EditProfileScreen(navController = navController)
-    }
-
     composable(NavDestination.Settings.route) {
         SettingsScreen(navController = navController)
     }
+
+    // Màn hình Thông báo
     composable(NavDestination.Notifications.route) {
         NotificationsScreen(navController = navController)
     }
 
-    composable(NavDestination.HelpAndSupport.route) {
-        HelpAndSupportScreen(navController = navController)
-    }
-
-    composable(NavDestination.MedicineReminder.route) {
-        MedicineReminderScreen(
-            onBack = { navController.popBackStack() }
-        )
+    // Màn hình Bảo vệ
+    composable(NavDestination.Security.route) {
+        SecurityScreen(navController = navController)
     }
 }

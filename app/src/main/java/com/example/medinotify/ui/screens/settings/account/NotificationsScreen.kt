@@ -27,6 +27,8 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.medinotify.R
 import com.example.medinotify.ui.screens.settings.account.StudyReminderWorker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext // Import cần thiết cho Dispatchers.IO
 import java.util.concurrent.TimeUnit
 
 // Định nghĩa khóa cho SharedPreferences (để lưu trạng thái)
@@ -41,16 +43,39 @@ private fun getPrefs(context: Context): SharedPreferences =
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(navController: NavController) {
+    // Khai báo màu sắc và Context
     val backgroundColor = Color(0xFFF5F5F5)
     val cardColor = Color.White
     val primaryColor = Color(0xFF6395EE)
     val textColor = Color(0xFF2D2D2D)
     val context = LocalContext.current
+
+    // Khởi tạo SharedPreferences object (chưa thực hiện I/O nặng)
     val prefs = remember { getPrefs(context) }
 
+    // TRẠNG THÁI MỚI: Theo dõi trạng thái tải (Loading)
+    var isLoadingPrefs by remember { mutableStateOf(true) }
+
+    // TRẠNG THÁI MỚI: Giá trị thông báo (Mặc định là false)
     var isNewNotificationEnabled by remember {
-        mutableStateOf(prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, false))
+        mutableStateOf(false)
     }
+
+    // KHẮC PHỤC LỖI LAG 5.57s: Đọc SharedPreferences trên Luồng I/O
+    LaunchedEffect(key1 = Unit) {
+        // Chuyển sang Dispatchers.IO để thực hiện công việc I/O nặng
+        withContext(Dispatchers.IO) {
+            // Thao tác đọc file I/O xảy ra ở đây
+            val isEnabled = prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, false)
+
+            // Quay lại Luồng Chính để cập nhật trạng thái Compose
+            withContext(Dispatchers.Main) {
+                isNewNotificationEnabled = isEnabled
+                isLoadingPrefs = false // Đánh dấu đã tải xong
+            }
+        }
+    }
+    // Hết Khắc phục lỗi
 
     var showConfirmationDialog by remember { mutableStateOf(false) }
 
@@ -59,6 +84,8 @@ fun NotificationsScreen(navController: NavController) {
             showConfirmationDialog = true
         } else {
             isNewNotificationEnabled = false
+            // Ghi dữ liệu: Nên đặt trong Coroutine để đảm bảo tính an toàn (Optional)
+            // Hiện tại dùng .apply() vẫn ổn trong trường hợp này.
             prefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, false).apply()
             cancelStudyReminder(context)
             Toast.makeText(context, "Đã tắt thông báo nhắc nhở.", Toast.LENGTH_SHORT).show()
@@ -75,26 +102,40 @@ fun NotificationsScreen(navController: NavController) {
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(backgroundColor)
-                .padding(paddingValues)
-        ) {
-            Card(
+
+        // KIỂM TRA LOADING: Hiển thị thanh tiến trình nếu đang tải
+        if (isLoadingPrefs) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = cardColor),
-                elevation = CardDefaults.cardElevation(2.dp)
+                    .fillMaxSize()
+                    .background(backgroundColor),
+                contentAlignment = Alignment.Center
             ) {
-                NotificationToggleItem(
-                    title = "Nhận thông báo nhắc nhở",
-                    primaryColor = primaryColor,
-                    isEnabled = isNewNotificationEnabled,
-                    onCheckedChange = handleToggle
-                )
+                CircularProgressIndicator(color = primaryColor)
+            }
+        } else {
+            // UI Chính chỉ hiển thị khi đã tải xong dữ liệu SharedPreferences
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(backgroundColor)
+                    .padding(paddingValues)
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = cardColor),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    NotificationToggleItem(
+                        title = "Nhận thông báo nhắc nhở",
+                        primaryColor = primaryColor,
+                        isEnabled = isNewNotificationEnabled,
+                        onCheckedChange = handleToggle
+                    )
+                }
             }
         }
     }
@@ -107,6 +148,7 @@ fun NotificationsScreen(navController: NavController) {
             },
             onConfirm = {
                 isNewNotificationEnabled = true
+                // Ghi dữ liệu
                 prefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, true).apply()
                 scheduleStudyReminder(context)
                 showConfirmationDialog = false
