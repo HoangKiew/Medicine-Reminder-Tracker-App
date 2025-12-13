@@ -1,34 +1,74 @@
 package com.example.medinotify.data.local
 
 import androidx.room.TypeConverter
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.Date
 
 /**
- * Bộ chuyển đổi kiểu dữ liệu cho Room, giúp Room hiểu cách
- * lưu trữ và đọc kiểu dữ liệu 'Date' từ cơ sở dữ liệu SQLite.
+ * Bộ chuyển đổi kiểu dữ liệu cho Room.
+ * ✅ ĐÃ SỬA: Đồng bộ định dạng giờ thành "HH:mm" để khớp với Database.
  */
 class Converters {
-    /**
-     * Chuyển đổi từ một con số Long (timestamp) mà SQLite lưu trữ
-     * thành một đối tượng Date để ứng dụng sử dụng.
-     * Room sẽ tự động gọi hàm này khi đọc dữ liệu.
-     * @param value Giá trị Long từ database (có thể null).
-     * @return Một đối tượng Date (hoặc null).
-     */
+
+    // ================== HỖ TRỢ KIỂU CŨ (java.util.Date) ==================
     @TypeConverter
     fun fromTimestamp(value: Long?): Date? {
         return value?.let { Date(it) }
     }
 
-    /**
-     * Chuyển đổi từ một đối tượng Date của ứng dụng
-     * thành một con số Long (timestamp) để SQLite có thể lưu trữ.
-     * Room sẽ tự động gọi hàm này khi ghi dữ liệu.
-     * @param date Đối tượng Date từ ứng dụng (có thể null).
-     * @return Một giá trị Long (hoặc null).
-     */
     @TypeConverter
     fun dateToTimestamp(date: Date?): Long? {
         return date?.time
+    }
+
+    // ================== ✨ HỖ TRỢ KIỂU MỚI (java.time) ==================
+
+    // 🔴 SỬA QUAN TRỌNG: Đổi từ ISO_LOCAL_TIME sang pattern "HH:mm"
+    // Điều này giúp khớp chính xác với chuỗi giờ bạn lưu trong ScheduleEntity
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+
+    // --- LocalTime <-> String ---
+    @TypeConverter
+    fun fromTimeString(value: String?): LocalTime? {
+        return value?.let {
+            try {
+                // Ưu tiên parse theo định dạng ngắn HH:mm
+                LocalTime.parse(it, timeFormatter)
+            } catch (e: Exception) {
+                try {
+                    // Fallback: Nếu dữ liệu cũ có giây (HH:mm:ss), thử parse kiểu mặc định
+                    LocalTime.parse(it)
+                } catch (ex: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
+    @TypeConverter
+    fun localTimeToString(date: LocalTime?): String? {
+        // Luôn lưu vào DB dưới dạng HH:mm (bỏ giây)
+        return date?.format(timeFormatter)
+    }
+
+    // --- LocalDate <-> String ---
+    @TypeConverter
+    fun fromDateString(value: String?): LocalDate? {
+        return value?.let {
+            try {
+                LocalDate.parse(it, dateFormatter)
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    @TypeConverter
+    fun localDateToString(date: LocalDate?): String? {
+        return date?.format(dateFormatter)
     }
 }

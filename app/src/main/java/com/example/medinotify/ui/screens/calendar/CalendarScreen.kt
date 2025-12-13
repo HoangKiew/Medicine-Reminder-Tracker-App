@@ -1,7 +1,7 @@
 package com.example.medinotify.ui.screens.calendar
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.clickable // ✅ 1. Import clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.medinotify.ui.navigation.NavDestination // ✅ 2. Import NavDestination
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.YearMonth
@@ -31,7 +32,6 @@ import java.util.*
 // I. CÁC HÀM COMPOSABLE PHỤ
 // =========================================================================
 
-// ✅ SỬA 1: Cập nhật MedicineCalendarCard để nhận vào ScheduleWithMedicine
 @Composable
 fun MedicineCalendarCard(item: ScheduleWithMedicine) {
     Card(
@@ -61,13 +61,11 @@ fun MedicineCalendarCard(item: ScheduleWithMedicine) {
                 }
 
                 Column {
-                    // Hiển thị tên thuốc nếu có, nếu không thì hiển thị "Tên thuốc không xác định"
                     Text(
                         text = item.medicine?.name ?: "Tên thuốc không xác định",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    // Hiển thị liều lượng nếu có
                     item.medicine?.dosage?.let {
                         Text(
                             text = "Liều lượng: $it",
@@ -82,7 +80,6 @@ fun MedicineCalendarCard(item: ScheduleWithMedicine) {
                 color = Color(0xFF2C60FF),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                // Định dạng lại thời gian từ Schedule
                 val timeString = item.schedule.specificTime.format(DateTimeFormatter.ofPattern("HH:mm"))
                 Text(
                     text = timeString,
@@ -141,7 +138,6 @@ fun CalendarDayCell(
     }
 }
 
-// ✅ SỬA 2: Cập nhật CalendarGrid để nhận vào LocalDate
 @Composable
 fun CalendarGrid(
     selectedDate: LocalDate,
@@ -150,7 +146,6 @@ fun CalendarGrid(
 ) {
     val yearMonth = YearMonth.from(selectedDate)
     val firstDayOfMonth = selectedDate.withDayOfMonth(1)
-    // DAY_OF_WEEK trả về 1(Thứ 2)..7(Chủ nhật). Ta cần 0..6.
     val firstDayOfWeek = (firstDayOfMonth.dayOfWeek.value % 7)
     val daysInMonth = yearMonth.lengthOfMonth()
     val today = LocalDate.now()
@@ -190,12 +185,10 @@ fun CalendarScreen(
     navController: NavController,
     viewModel: CalendarViewModel = koinViewModel()
 ) {
-    // ✅ SỬA 3: Lắng nghe State mới từ ViewModel
     val selectedDate by viewModel.selectedDate.collectAsState()
     val scheduledDays by viewModel.scheduledDaysInMonth.collectAsState()
     val schedulesWithMedicineList by viewModel.schedulesForSelectedDay.collectAsState()
 
-    // Logic tính tên tháng/năm từ selectedDate
     val currentMonthYear by remember(selectedDate) {
         derivedStateOf {
             val monthName = selectedDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
@@ -208,7 +201,7 @@ fun CalendarScreen(
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
     ) {
-        // ... (Top Bar không thay đổi)
+        // ================== TOP BAR (ĐÃ SỬA) ==================
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -217,30 +210,51 @@ fun CalendarScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // 📅 1. Icon Lịch (Hiện tại đang ở trang Lịch nên có thể không cần navigate, nhưng để cho đồng bộ)
             Icon(
                 Icons.Filled.DateRange,
                 contentDescription = "Calendar",
                 tint = Color(0xFFFF5A5A),
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable {
+                        // Nếu muốn reload lại trang lịch hoặc chỉ đơn giản là hiện icon
+                        navController.navigate(NavDestination.Calendar.route) {
+                            launchSingleTop = true
+                        }
+                    }
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // 👤 2. Icon Hồ sơ (Profile)
                 Icon(
                     Icons.Default.Person,
                     contentDescription = "Profile",
                     tint = Color(0xFF355CFF),
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clickable { // ✅ Thêm điều hướng
+                            navController.navigate(NavDestination.Profile.route)
+                        }
                 )
+
                 Spacer(modifier = Modifier.width(18.dp))
+
+                // ⚙️ 3. Icon Cài đặt (Settings)
                 Icon(
                     Icons.Default.Settings,
                     contentDescription = "Settings",
                     tint = Color.DarkGray,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clickable { // ✅ Thêm điều hướng
+                            navController.navigate(NavDestination.Settings.route)
+                        }
                 )
             }
         }
 
+        // ... Phần còn lại giữ nguyên ...
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -274,7 +288,6 @@ fun CalendarScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    // ... (Day Labels không thay đổi)
                     listOf("CN", "T2", "T3", "T4", "T5", "T6", "T7").forEach { day ->
                         Text(
                             text = day,
@@ -289,7 +302,6 @@ fun CalendarScreen(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // ✅ SỬA 4: Truyền state mới vào CalendarGrid
                 CalendarGrid(
                     selectedDate = selectedDate,
                     scheduledDays = scheduledDays,
@@ -307,7 +319,6 @@ fun CalendarScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // ✅ SỬA 5: Hiển thị danh sách ScheduleWithMedicine
         LazyColumn(
             modifier = Modifier
                 .weight(1f)

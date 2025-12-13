@@ -2,7 +2,6 @@ package com.example.medinotify.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-// ✅ BƯỚC 1: IMPORT CÁC LỚP CẦN THIẾT
 import com.example.medinotify.data.domain.Schedule
 import com.example.medinotify.data.repository.MedicineRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -10,7 +9,7 @@ import kotlinx.coroutines.flow.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-// Các lớp UI State không thay đổi, nhưng giữ ở đây để tham khảo
+// Các data class giữ nguyên
 data class HomeUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val medicineSchedules: List<MedicineItem> = emptyList(),
@@ -20,48 +19,48 @@ data class HomeUiState(
 data class MedicineItem(
     val name: String,
     val description: String,
-    val time: String, // Đã chuyển thành String để UI hiển thị trực tiếp
+    val time: String,
     val isTaken: Boolean
 )
-
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModel(private val repository: MedicineRepository) : ViewModel() {
 
-    // _selectedDate là nguồn sự thật (source of truth) cho ngày được chọn.
     private val _selectedDate = MutableStateFlow(LocalDate.now())
 
-    val uiState: StateFlow<HomeUiState> = _selectedDate
+    // ✨ THÊM MỚI: Biến này dùng để kích hoạt việc tải lại dữ liệu
+    private val _refreshTrigger = MutableStateFlow(0)
+
+    val uiState: StateFlow<HomeUiState> = combine(_selectedDate, _refreshTrigger) { date, _ ->
+        date // Khi ngày đổi HOẶC trigger đổi -> trả về ngày để flatMap xử lý tiếp
+    }
         .flatMapLatest { date ->
-            // ✅ SỬA 2: Lấy hai luồng dữ liệu riêng biệt từ Repository
             val schedulesFlow = repository.getSchedulesForDate(date)
             val medicinesFlow = repository.getAllMedicines()
 
-            // ✅ SỬA 3: Kết hợp (combine) hai luồng dữ liệu lại
             combine(schedulesFlow, medicinesFlow) { schedules, medicines ->
-                // Tạo một Map để tra cứu thông tin Medicine theo ID cho hiệu quả
                 val medicineMap = medicines.associateBy { it.medicineId }
 
                 val medicineItems = schedules.mapNotNull { schedule ->
-                    // Tìm thuốc tương ứng với lịch trình
                     val medicine = medicineMap[schedule.medicineId]
                     if (medicine != null) {
-                        // Chuyển đổi thành đối tượng MedicineItem mà UI cần
                         MedicineItem(
                             name = medicine.name,
                             description = medicine.dosage,
                             time = schedule.specificTime.format(DateTimeFormatter.ofPattern("HH:mm")),
-                            isTaken = schedule.reminderStatus
+                            isTaken = schedule.reminderStatus // Trạng thái xanh/đỏ lấy từ đây
                         )
                     } else {
-                        // Nếu không tìm thấy thuốc (dữ liệu không nhất quán), bỏ qua lịch trình này
                         null
                     }
                 }
-                // Tạo ra một HomeUiState hoàn chỉnh
+
+                // Sắp xếp theo giờ để danh sách đẹp hơn
+                val sortedItems = medicineItems.sortedBy { it.time }
+
                 HomeUiState(
                     selectedDate = date,
-                    medicineSchedules = medicineItems,
+                    medicineSchedules = sortedItems,
                     isLoading = false
                 )
             }
@@ -69,13 +68,15 @@ class HomeViewModel(private val repository: MedicineRepository) : ViewModel() {
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = HomeUiState(isLoading = true) // Trạng thái ban đầu
+            initialValue = HomeUiState(isLoading = true)
         )
 
-    /**
-     * Tải lịch uống thuốc cho một ngày được chọn.
-     */
     fun loadSchedulesForDate(date: LocalDate) {
         _selectedDate.value = date
+    }
+
+    // ✨ THÊM MỚI: Hàm này gọi để ép ViewModel tải lại dữ liệu
+    fun refreshData() {
+        _refreshTrigger.value += 1
     }
 }

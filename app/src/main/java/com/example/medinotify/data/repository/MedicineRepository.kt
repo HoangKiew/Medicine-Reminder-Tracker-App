@@ -19,7 +19,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter // ✅ Import thêm để format giờ cho Firebase
 
 class MedicineRepository(
     private val firestore: FirebaseFirestore,
@@ -33,8 +35,6 @@ class MedicineRepository(
 
     // =========================================================================
     // I. CÁC HÀM ĐỌC DỮ LIỆU (READ OPERATIONS)
-    // Luôn lấy dữ liệu từ Room (Single Source of Truth).
-    // Giao diện sẽ lắng nghe các Flow này.
     // =========================================================================
 
     fun getCurrentUser(): FirebaseUser? {
@@ -50,7 +50,6 @@ class MedicineRepository(
     }
 
     suspend fun getMedicineById(medicineId: String): Medicine? {
-        // Lấy trực tiếp từ DAO, không cần thông qua Flow
         return medicineDao.getMedicineById(medicineId)?.toDomainModel()
     }
 
@@ -64,8 +63,6 @@ class MedicineRepository(
     }
 
     fun getLogHistoryForDateRange(dateStart: Long, dateEnd: Long): Flow<List<LogEntry>> {
-        // ✅ SỬA 1: Truyền `userId` vào làm tham số đầu tiên.
-        // Hàm getLogEntriesByDateRange trong DAO yêu cầu 3 tham số: (userId, dateStart, dateEnd).
         return logEntryDao.getLogEntriesByDateRange(userId ?: "", dateStart, dateEnd).map { entityList ->
             entityList.map { it.toDomainModel() }
         }
@@ -73,17 +70,12 @@ class MedicineRepository(
 
     // =========================================================================
     // II. CÁC HÀM GHI DỮ LIỆU (WRITE OPERATIONS)
-    // Thực hiện trên cả Firebase và Room.
     // =========================================================================
 
     fun signOut() {
         auth.signOut()
     }
 
-    /**
-     * ✅ HÀM THÊM THUỐC HOÀN CHỈNH
-     * Thêm thuốc và lịch trình vào cả Firebase và Room.
-     */
     suspend fun addMedicine(medicine: Medicine, schedules: List<Schedule>) {
         val currentUserId = userId ?: throw IllegalStateException("User not logged in.")
 
@@ -99,7 +91,7 @@ class MedicineRepository(
                 scheduleRef.set(schedule).await()
             }
 
-            // 🔥 Bước 2: Ghi vào Room để cập nhật giao diện ngay lập tức
+            // Bước 2: Ghi vào Room
             medicineDao.insertMedicine(medicine.toEntity(currentUserId))
             scheduleDao.insertSchedules(schedules.map { it.toEntity(currentUserId) })
         }
@@ -109,14 +101,9 @@ class MedicineRepository(
         val currentUserId = userId ?: throw IllegalStateException("User not logged in.")
 
         withContext(Dispatchers.IO) {
-            // Bước 1: Xóa trên Firebase trước
             firestore.collection("users").document(currentUserId)
                 .collection("medicines").document(medicineId).delete().await()
-            // (Bạn cũng nên có logic xóa schedules và logs liên quan trên Firebase)
 
-            // Bước 2: Xóa trên Room
-            // Thao tác này sẽ tự động cập nhật UI qua Flow
-            // ✅ SỬA 2: Truyền `currentUserId` vào các hàm xóa để đảm bảo chỉ xóa đúng dữ liệu của người dùng.
             scheduleDao.deleteSchedulesByMedicineId(medicineId, currentUserId)
             logEntryDao.deleteLogsForMedicine(medicineId, currentUserId)
             medicineDao.deleteMedicineById(medicineId)
@@ -130,16 +117,42 @@ class MedicineRepository(
             val medicine = getMedicineById(logEntry.medicineId)
             val medicineName = medicine?.name ?: "Unknown"
 
-            // Ghi lên Firebase (bạn có thể phát triển logic này)
-            // firestore.collection("users")...
-
-            // Ghi vào Room để cập nhật UI
             logEntryDao.insertLogEntry(logEntry.toEntity(currentUserId, medicineName))
         }
     }
 
+    // ✨✨✨ HÀM QUAN TRỌNG ĐÃ ĐƯỢC SỬA ✨✨✨
+    suspend fun updateScheduleStatus(medicineId: String, time: LocalTime, status: Boolean) {
+        val currentUserId = userId ?: return
+
+        withContext(Dispatchers.IO) {
+            // 1. Cập nhật vào Room
+            // 🔴 SỬA: Đã XÓA currentUserId ở tham số cuối cùng để khớp với ScheduleDao
+            scheduleDao.updateScheduleStatus(medicineId, time, status)
+
+            // 2. Cập nhật Firebase
+            try {
+                // Format giờ thành HH:mm để tìm chính xác trên Firebase
+                val timeString = time.format(DateTimeFormatter.ofPattern("HH:mm"))
+
+                val snapshot = firestore.collection("users").document(currentUserId)
+                    .collection("schedules")
+                    .whereEqualTo("medicineId", medicineId)
+                    .whereEqualTo("specificTime", timeString) // Sử dụng chuỗi đã format
+                    .get().await()
+
+                for (document in snapshot.documents) {
+                    document.reference.update("reminderStatus", status)
+                }
+            } catch (e: Exception) {
+                Log.e("MedicineRepository", "Error updating Firebase status", e)
+            }
+        }
+    }
+
+
     // =========================================================================
-    // III. ĐỒNG BỘ DỮ LIỆU TỪ FIREBASE (Khi khởi động app)
+    // III. ĐỒNG BỘ DỮ LIỆU TỪ FIREBASE
     // =========================================================================
 
     suspend fun syncDataFromFirebase() {
@@ -152,16 +165,12 @@ class MedicineRepository(
                     .collection("medicines").get().await()
                 val firestoreMedicines = medicinesSnapshot.documents.mapNotNull { it.toObject<Medicine>() }
                 medicineDao.insertMedicines(firestoreMedicines.map { it.toEntity(currentUserId) })
-                Log.d("Repository", "Synced ${firestoreMedicines.size} medicines.")
 
                 // Đồng bộ Schedules
                 val schedulesSnapshot = firestore.collection("users").document(currentUserId)
                     .collection("schedules").get().await()
                 val firestoreSchedules = schedulesSnapshot.documents.mapNotNull { it.toObject<Schedule>() }
                 scheduleDao.insertSchedules(firestoreSchedules.map { it.toEntity(currentUserId) })
-                Log.d("Repository", "Synced ${firestoreSchedules.size} schedules.")
-
-                // (Tương tự cho LogEntries nếu cần)
 
             } catch (e: Exception) {
                 Log.e("Repository", "Error syncing data from Firebase", e)

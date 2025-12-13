@@ -2,6 +2,7 @@ package com.example.medinotify.ui.screens.addmedicine
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable // ✅ Import clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,21 +19,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController // ✅ Import NavController
 import com.example.medinotify.R
-import org.koin.androidx.compose.koinViewModel // ✨ THÊM IMPORT
+import com.example.medinotify.ui.navigation.NavDestination // ✅ Import NavDestination
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun StartScreen(
+    navController: NavController, // ✅ THÊM: Nhận NavController để điều hướng
     onStart: () -> Unit,
-    viewModel: StartViewModel = koinViewModel() // ✨ THÊM VIEWMODEL
+    viewModel: StartViewModel = koinViewModel()
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)   // ⭐ NỀN TRẮNG
+            .background(Color.White)
     ) {
 
-        // =================== TOP ICONS (Có thể sẽ được thay bằng TopAppBar chung) ===================
+        // =================== TOP ICONS ===================
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -40,25 +44,42 @@ fun StartScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // 📅 ICON LỊCH
             Icon(
                 imageVector = Icons.Filled.DateRange,
-                contentDescription = null,
+                contentDescription = "Calendar",
                 tint = Color(0xFFFF5A5A),
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable { // ✅ Thêm sự kiện click
+                        navController.navigate(NavDestination.Calendar.route)
+                    }
             )
+
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // 👤 ICON PROFILE
                 Icon(
                     imageVector = Icons.Filled.Person,
-                    contentDescription = null,
+                    contentDescription = "Profile",
                     tint = Color(0xFF355CFF),
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clickable { // ✅ Thêm sự kiện click
+                            navController.navigate(NavDestination.Profile.route)
+                        }
                 )
                 Spacer(modifier = Modifier.width(18.dp))
+
+                // ⚙️ ICON SETTINGS
                 Icon(
                     imageVector = Icons.Filled.Settings,
-                    contentDescription = null,
+                    contentDescription = "Settings",
                     tint = Color.DarkGray,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clickable { // ✅ Thêm sự kiện click
+                            navController.navigate(NavDestination.Settings.route)
+                        }
                 )
             }
         }

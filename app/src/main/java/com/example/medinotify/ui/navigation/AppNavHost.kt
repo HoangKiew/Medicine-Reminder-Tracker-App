@@ -23,9 +23,12 @@ import com.example.medinotify.ui.screens.history.MedicineHistoryScreen
 import com.example.medinotify.ui.screens.home.HomeScreen
 import com.example.medinotify.ui.screens.profile.ProfileScreen
 import com.example.medinotify.ui.screens.settings.SettingsScreen
-import com.example.medinotify.ui.screens.settings.HelpAndSupportScreen // ✨ MỚI: Import màn hình Trợ giúp
+import com.example.medinotify.ui.screens.settings.HelpAndSupportScreen
 import com.example.medinotify.ui.screens.settings.account.NotificationsScreen
 import com.example.medinotify.ui.screens.settings.account.SecurityScreen
+
+// Import màn hình nhắc nhở
+import com.example.medinotify.ui.screens.reminder.MedicineReminderScreen
 
 // Import các màn hình Auth
 import com.example.medinotify.ui.screens.auth.login.LoginRoute
@@ -152,7 +155,7 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         MedicineHistoryScreen(navController)
     }
 
-    // Medicine History Detail (with parameter)
+    // Medicine History Detail
     composable(
         route = NavDestination.MedicineHistoryDetail.route,
         arguments = listOf(navArgument("date") { type = NavType.StringType })
@@ -162,12 +165,16 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
     }
 
     // Add Medicine Flow
+    // ✅ ĐÃ SỬA: Truyền navController vào StartScreen
     composable(NavDestination.StartAddMedicine.route) {
-        StartScreen(onStart = {
-            navController.navigate(NavDestination.AddMedicine.route) {
-                launchSingleTop = true
+        StartScreen(
+            navController = navController, // <-- Thêm dòng này
+            onStart = {
+                navController.navigate(NavDestination.AddMedicine.route) {
+                    launchSingleTop = true
+                }
             }
-        })
+        )
     }
 
     composable(NavDestination.AddMedicine.route) {
@@ -183,18 +190,42 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         SettingsScreen(navController = navController)
     }
 
-    // Màn hình Thông báo
+    // Notifications
     composable(NavDestination.Notifications.route) {
         NotificationsScreen(navController = navController)
     }
 
-    // Màn hình Bảo vệ
+    // Security
     composable(NavDestination.Security.route) {
         SecurityScreen(navController = navController)
     }
 
-    // ✨ MỚI: Màn hình Trợ giúp & Hỗ trợ
+    // Help & Support
     composable(NavDestination.HelpAndSupport.route) {
         HelpAndSupportScreen(navController = navController)
+    }
+
+    // Màn hình Reminder nhận tham số từ Thông báo
+    composable(
+        route = "reminder/{medicineId}/{medicineName}/{dosage}/{time}",
+        arguments = listOf(
+            navArgument("medicineId") { type = NavType.StringType },
+            navArgument("medicineName") { type = NavType.StringType },
+            navArgument("dosage") { type = NavType.StringType },
+            navArgument("time") { type = NavType.StringType }
+        )
+    ) { backStackEntry ->
+        val medicineId = backStackEntry.arguments?.getString("medicineId") ?: ""
+        val medicineName = backStackEntry.arguments?.getString("medicineName") ?: ""
+        val dosage = backStackEntry.arguments?.getString("dosage") ?: ""
+        val time = backStackEntry.arguments?.getString("time") ?: ""
+
+        MedicineReminderScreen(
+            navController = navController,
+            medicineId = medicineId,
+            medicineName = medicineName,
+            dosage = dosage,
+            time = time
+        )
     }
 }

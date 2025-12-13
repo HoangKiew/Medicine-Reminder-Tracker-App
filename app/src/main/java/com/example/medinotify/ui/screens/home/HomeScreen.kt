@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -20,34 +21,47 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner // ✅ Import mới
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle // ✅ Import mới
+import androidx.lifecycle.LifecycleEventObserver // ✅ Import mới
 import androidx.navigation.NavController
 import com.example.medinotify.R
-// ✅ BỔ SUNG IMPORT CÒN THIẾU
 import com.example.medinotify.ui.navigation.NavDestination
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 
-
 data class Day(val date: LocalDate, val number: String, val label: String)
-
-
-// ----------------------------- MAIN HOMESCREEN -------------------------
 
 @Composable
 fun HomeScreen(
     navController: NavController,
-    viewModel: HomeViewModel = koinViewModel() // Inject ViewModel bằng Koin
+    viewModel: HomeViewModel = koinViewModel()
 ) {
-    // Lấy trạng thái (State) từ StateFlow trong ViewModel.
     val uiState by viewModel.uiState.collectAsState()
 
-    // Lấy dữ liệu từ uiState để dùng cho tiện
+    // ✅ THAY ĐỔI QUAN TRỌNG Ở ĐÂY:
+    // Sử dụng Lifecycle để lắng nghe khi màn hình "sống lại" (ON_RESUME)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // Mỗi khi màn hình hiện lên (kể cả khi quay lại từ màn hình khác),
+                // hãy tải lại dữ liệu ngay lập tức.
+                viewModel.refreshData()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val medicineList = uiState.medicineSchedules
     val totalMedicines = medicineList.size
     val takenMedicines = medicineList.count { it.isTaken }
@@ -55,9 +69,11 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color.White) // Đảm bảo nền trắng
             .padding(top = 40.dp)
     ) {
+        // ... (Phần UI bên dưới giữ nguyên không đổi) ...
+
         // ------------------- TOP BAR -------------------
         Row(
             modifier = Modifier
@@ -68,42 +84,29 @@ fun HomeScreen(
         ) {
             Icon(
                 Icons.Filled.DateRange, contentDescription = "Calendar", tint = Color(0xFFFF5A5A),
-                modifier = Modifier
-                    .size(28.dp)
-                    .clickable {
-                        navController.navigate(NavDestination.Calendar.route)
-                    }
+                modifier = Modifier.size(28.dp).clickable { navController.navigate(NavDestination.Calendar.route) }
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Filled.Person, contentDescription = "Profile", tint = Color(0xFF355CFF),
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clickable {
-                            navController.navigate(NavDestination.Profile.route)
-                        }
+                    modifier = Modifier.size(28.dp).clickable { navController.navigate(NavDestination.Profile.route) }
                 )
                 Spacer(modifier = Modifier.width(18.dp))
                 Icon(
                     Icons.Filled.Settings, contentDescription = "Settings", tint = Color.DarkGray,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clickable {
-                            navController.navigate(NavDestination.Settings.route)
-                        }
+                    modifier = Modifier.size(28.dp).clickable { navController.navigate(NavDestination.Settings.route) }
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
-
         Text("Hôm nay", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C60FF), modifier = Modifier.padding(start = 20.dp))
         Spacer(modifier = Modifier.height(15.dp))
 
         // ------------------ DATE SELECTOR ----------------------
         DaySelector(
             selectedDate = uiState.selectedDate,
-            onDaySelected = { newDate -> viewModel.loadSchedulesForDate(newDate) } // Gọi hàm trong ViewModel
+            onDaySelected = { newDate -> viewModel.loadSchedulesForDate(newDate) }
         )
 
         Spacer(modifier = Modifier.height(22.dp))
@@ -123,6 +126,7 @@ fun HomeScreen(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Image(painterResource(id = R.drawable.medicine_start), contentDescription = null, modifier = Modifier.size(55.dp))
+                    // Text hiển thị số lượng thuốc đã uống / tổng số
                     Text("$takenMedicines/$totalMedicines", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color(0xFF355CFF))
                     Text(uiState.selectedDate.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()), fontSize = 14.sp, color = Color.Gray)
                 }
@@ -133,34 +137,28 @@ fun HomeScreen(
 
         // ------------------ LIST MEDICINE ----------------------
         if (uiState.isLoading) {
-            // Hiển thị vòng xoay loading khi dữ liệu đang tải
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         } else {
-            // Hiển thị danh sách khi đã có dữ liệu
             LazyColumn(modifier = Modifier.padding(horizontal = 20.dp)) {
                 items(medicineList) { item ->
                     MedicineCard(item)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 item {
-                    Spacer(modifier = Modifier.height(80.dp)) // Để tránh bị che bởi BottomBar
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
         }
     }
 }
 
-// ----------------------------- SUPPORTING COMPOSABLES -------------------------
-
+// ... (Các hàm DaySelector và MedicineCard giữ nguyên như file cũ)
 @Composable
-fun DaySelector(
-    selectedDate: LocalDate,
-    onDaySelected: (LocalDate) -> Unit
-) {
+fun DaySelector(selectedDate: LocalDate, onDaySelected: (LocalDate) -> Unit) {
     val today = LocalDate.now()
-    val daysOfWeek = remember(today) { // Chỉ tính toán lại khi 'today' thay đổi
+    val daysOfWeek = remember(today) {
         List(7) { i ->
             val date = today.plusDays(i.toLong())
             Day(
@@ -171,15 +169,9 @@ fun DaySelector(
         }
     }
 
-    LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    LazyRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         items(daysOfWeek) { day ->
             val isSelected = day.date == selectedDate
-
             Column(
                 modifier = Modifier
                     .width(60.dp)
@@ -196,12 +188,7 @@ fun DaySelector(
             ) {
                 Text(day.number, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    day.label,
-                    fontSize = 12.sp,
-                    color = if (isSelected) Color(0xFF2C60FF) else Color.Gray,
-                    fontWeight = FontWeight.Medium
-                )
+                Text(day.label, fontSize = 12.sp, color = if (isSelected) Color(0xFF2C60FF) else Color.Gray, fontWeight = FontWeight.Medium)
             }
         }
     }
@@ -210,6 +197,8 @@ fun DaySelector(
 @Composable
 fun MedicineCard(item: MedicineItem) {
     val bgColor = if (item.isTaken) Color(0xFFDBFFE8) else Color(0xFFFFE3E3)
+    val iconTint = if (item.isTaken) Color(0xFF00C853) else Color(0xFFFFC700)
+    val icon = if (item.isTaken) Icons.Filled.CheckCircle else Icons.Filled.Info
 
     Box(
         modifier = Modifier
@@ -226,10 +215,10 @@ fun MedicineCard(item: MedicineItem) {
                 Box(
                     modifier = Modifier
                         .size(38.dp)
-                        .background(Color(0xFFFFC700), CircleShape),
+                        .background(Color.White, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.Info, contentDescription = null, tint = Color.White)
+                    Icon(icon, contentDescription = null, tint = iconTint)
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {

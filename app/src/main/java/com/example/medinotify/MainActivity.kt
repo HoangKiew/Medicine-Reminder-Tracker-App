@@ -1,57 +1,98 @@
-// MainActivity.kt
 package com.example.medinotify
 
-import android.Manifest // Thêm import cho Manifest
+import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build // Thêm import cho Build
+import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts // Thêm import cho ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.core.content.ContextCompat // Thêm import cho ContextCompat
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+
 import com.example.medinotify.ui.navigation.MedinotifyApp
+import com.example.medinotify.ui.theme.MedinotifyTheme
 
 class MainActivity : ComponentActivity() {
 
-    // Khởi tạo ActivityResultLauncher để xử lý kết quả yêu cầu quyền
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-            if (isGranted) {
-                // Quyền được cấp, có thể gửi thông báo
-            } else {
-                // Quyền bị từ chối, tính năng thông báo có thể không hoạt động
-            }
-        }
+    private var navController: NavHostController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ✨ GỌI HÀM YÊU CẦU QUYỀN TRƯỚC KHI SET CONTENT ✨
-        requestNotificationPermission()
-
         setContent {
-            MaterialTheme {
-                MedinotifyApp()
+            // ✅ SỬA Ở ĐÂY: Thêm (darkTheme = false) để ép dùng giao diện trắng
+            MedinotifyTheme(darkTheme = false) {
+
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val navController = rememberNavController()
+                    this.navController = navController
+
+                    val launcher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission(),
+                        onResult = { isGranted ->
+                            if (!isGranted) {
+                                Toast.makeText(this, "Bạn cần cấp quyền để nhận thông báo uống thuốc!", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    )
+
+                    SideEffect {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
+                    }
+
+                    MedinotifyApp(navController = navController)
+
+                    LaunchedEffect(Unit) {
+                        checkAndNavigate(intent, navController)
+                    }
+                }
             }
         }
     }
 
-    /**
-     * Yêu cầu quyền POST_NOTIFICATIONS nếu thiết bị chạy Android 13 (API 33) trở lên.
-     */
-    private fun requestNotificationPermission() {
-        // Chỉ yêu cầu quyền nếu API >= 33 (Android 13/TIRAMISU)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        this.intent = intent
+        navController?.let {
+            checkAndNavigate(intent, it)
+        }
+    }
 
-            // 1. Kiểm tra xem quyền đã được cấp chưa
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // 2. Nếu chưa cấp, yêu cầu quyền từ người dùng
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    private fun checkAndNavigate(intent: Intent?, navController: NavHostController) {
+        val navigateTo = intent?.getStringExtra("NAVIGATE_TO")
+
+        if (navigateTo == "reminder_screen") {
+            val id = intent?.getStringExtra("MEDICINE_ID") ?: ""
+            val name = intent?.getStringExtra("MEDICINE_NAME") ?: ""
+            val dosage = intent?.getStringExtra("MEDICINE_DOSAGE") ?: ""
+            val time = intent?.getStringExtra("SCHEDULE_TIME") ?: ""
+
+            val route = "reminder/$id/$name/$dosage/$time"
+
+            try {
+                navController.navigate(route) {
+                    launchSingleTop = true
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
