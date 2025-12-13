@@ -5,15 +5,14 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.medinotify.data.model.MedicineEntity
-import com.example.medinotify.data.model.ScheduleEntity
+import androidx.room.Update // ✅ Đã thêm import này
+import com.example.medinotify.data.model.MedicineEntity // (Giữ nguyên import của bạn)
+// Nếu Entity của bạn nằm ở package khác (vd: data.local.entity), hãy sửa lại dòng trên
 import kotlinx.coroutines.flow.Flow
-import java.time.LocalDate
-import java.time.LocalTime
 
 @Dao
 interface MedicineDao {
-    // ================== PHẦN THUỐC (MEDICINES) ==================
+    // ================== CÁC HÀM THÊM (CREATE) ==================
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMedicine(medicine: MedicineEntity)
@@ -21,11 +20,21 @@ interface MedicineDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMedicines(medicines: List<MedicineEntity>)
 
+    // ================== CÁC HÀM ĐỌC (READ) ==================
+
     @Query("SELECT * FROM medicines WHERE userId = :userId ORDER BY name ASC")
     fun getAllMedicines(userId: String): Flow<List<MedicineEntity>>
 
     @Query("SELECT * FROM medicines WHERE medicineId = :medicineId")
     suspend fun getMedicineById(medicineId: String): MedicineEntity?
+
+    // ================== CÁC HÀM CẬP NHẬT (UPDATE) ==================
+
+    // ✨✨✨ ĐÂY LÀ HÀM BẠN ĐANG THIẾU ✨✨✨
+    @Update
+    suspend fun updateMedicine(medicine: MedicineEntity)
+
+    // ================== CÁC HÀM XÓA (DELETE) ==================
 
     @Delete
     suspend fun deleteMedicine(medicine: MedicineEntity)
@@ -33,21 +42,6 @@ interface MedicineDao {
     @Query("DELETE FROM medicines WHERE medicineId = :medicineId")
     suspend fun deleteMedicineById(medicineId: String)
 
-    /**
-     * ✨✨✨ HÀM CÒN THIẾU: Xóa sạch bảng thuốc ✨✨✨
-     */
     @Query("DELETE FROM medicines")
     suspend fun clearAllMedicines()
-
-
-    // ================== PHẦN LỊCH (SCHEDULES) ==================
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertSchedules(schedules: List<ScheduleEntity>)
-
-    @Query("SELECT * FROM schedules WHERE date(specificTime) = date(:date)")
-    fun getSchedulesForDate(date: LocalDate): Flow<List<ScheduleEntity>>
-
-    @Query("UPDATE schedules SET reminderStatus = :status WHERE medicineId = :medicineId AND specificTime = :time")
-    suspend fun updateScheduleStatus(medicineId: String, time: LocalTime, status: Boolean)
 }

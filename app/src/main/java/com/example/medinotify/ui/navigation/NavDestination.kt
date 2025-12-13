@@ -31,7 +31,11 @@ sealed class NavDestination(val route: String) {
 
     // Luồng thêm thuốc
     object StartAddMedicine : NavDestination("start_add_medicine") // Sửa đổi
-    object AddMedicine : NavDestination("add_medicine")           // Sửa đổi
+    object AddMedicine : NavDestination("add_medicine?medicineId={medicineId}") {
+        fun createRoute(medicineId: String? = null): String {
+            return if (medicineId != null) "add_medicine?medicineId=$medicineId" else "add_medicine"
+        }
+    }        // Sửa đổi
 
     // ---- Nhóm màn hình Cài đặt ----
     object Settings : NavDestination("settings")

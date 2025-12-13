@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle // ✅ Import quan trọng để nhận tham số Navigation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.Data
@@ -16,7 +17,7 @@ import com.example.medinotify.data.repository.MedicineRepository
 import com.example.medinotify.worker.MedicineReminderWorker
 import kotlinx.coroutines.launch
 import java.time.Duration
-import java.time.LocalDate // ✅ Dùng LocalDate
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
@@ -25,8 +26,12 @@ import java.util.concurrent.TimeUnit
 
 class AddMedicineViewModel(
     private val repository: MedicineRepository,
-    private val workManager: WorkManager
+    private val workManager: WorkManager,
+    private val savedStateHandle: SavedStateHandle // ✅ Nhận SavedStateHandle từ Koin/Navigation
 ) : ViewModel() {
+
+    // ✅ Lấy ID thuốc từ Navigation (Nếu có -> Chế độ Sửa, Nếu null -> Chế độ Thêm)
+    private val medicineId: String? = savedStateHandle["medicineId"]
 
     // --- State UI ---
     var name by mutableStateOf("")
@@ -43,11 +48,18 @@ class AddMedicineViewModel(
     var uiMessage by mutableStateOf<String?>(null)
         private set
 
-    // ✨✨✨ THÊM MỚI: State cho ngày bắt đầu và kết thúc ✨✨✨
+    // State cho ngày bắt đầu và kết thúc
     var startDate by mutableStateOf(LocalDate.now())
         private set
-    var endDate by mutableStateOf(LocalDate.now()) // Mặc định là hôm nay (1 ngày)
+    var endDate by mutableStateOf(LocalDate.now())
         private set
+
+    // ✨✨✨ INIT BLOCK: Kiểm tra xem có đang sửa thuốc không ✨✨✨
+    init {
+        if (medicineId != null) {
+            loadMedicineData(medicineId)
+        }
+    }
 
     // --- Helper UI ---
     fun onNameChange(newName: String) { name = newName }
@@ -56,16 +68,14 @@ class AddMedicineViewModel(
     fun onQuantityChange(newQuantity: String) { if (newQuantity.all { it.isDigit() } || newQuantity.isEmpty()) quantity = newQuantity }
     fun onEnableReminderChange(isEnabled: Boolean) { enableReminder = isEnabled }
 
-    // ✨ Các hàm cập nhật ngày
     fun onStartDateChange(date: LocalDate) {
         startDate = date
-        // Nếu ngày bắt đầu lớn hơn ngày kết thúc, tự động đẩy ngày kết thúc lên
         if (startDate.isAfter(endDate)) {
             endDate = startDate
         }
     }
     fun onEndDateChange(date: LocalDate) {
-        if (!date.isBefore(startDate)) { // Không cho chọn ngày kết thúc trước ngày bắt đầu
+        if (!date.isBefore(startDate)) {
             endDate = date
         } else {
             uiMessage = "Ngày kết thúc không thể trước ngày bắt đầu"
@@ -76,8 +86,29 @@ class AddMedicineViewModel(
     fun removeSpecificTime(time: LocalTime) { specificTimes.remove(time) }
     fun clearUiMessage() { uiMessage = null }
 
-    // --- HÀM LƯU CHÍNH ---
-    fun saveMedicine() {
+    // ✨✨✨ HÀM TẢI DỮ LIỆU CŨ (KHI SỬA) ✨✨✨
+    private fun loadMedicineData(id: String) {
+        viewModelScope.launch {
+            val medicine = repository.getMedicineById(id)
+            if (medicine != null) {
+                name = medicine.name
+                dosage = medicine.dosage
+                medicineType = medicine.type
+                quantity = medicine.quantity.toString()
+                enableReminder = medicine.isActive
+
+                // Lưu ý: Vì logic Schedule phức tạp (lưu từng ngày), việc load lại chính xác
+                // ngày bắt đầu/kết thúc và giờ từ hàng trăm record Schedule là rất khó và tốn kém.
+                // UX tốt nhất: Load thông tin cơ bản, còn lịch nhắc nhở người dùng sẽ đặt lại mới.
+                if (enableReminder) {
+                    uiMessage = "Đang chỉnh sửa: Vui lòng đặt lại lịch nhắc nhở."
+                }
+            }
+        }
+    }
+
+    // --- HÀM LƯU CHÍNH (ADD HOẶC UPDATE) ---
+    fun saveMedicine(onSuccess: () -> Unit) { // ✅ Thêm callback onSuccess để đóng màn hình
         uiMessage = null
         if (name.isBlank() || medicineType == "Chọn dạng thuốc" || dosage.isBlank() || quantity.isBlank()) {
             uiMessage = "Vui lòng nhập đủ thông tin!"
@@ -90,9 +121,11 @@ class AddMedicineViewModel(
 
         viewModelScope.launch {
             try {
-                val newMedicineId = UUID.randomUUID().toString()
-                val newMedicine = Medicine(
-                    medicineId = newMedicineId,
+                // QUAN TRỌNG: Nếu đang sửa thì dùng ID cũ, nếu thêm mới thì tạo ID mới
+                val finalMedicineId = medicineId ?: UUID.randomUUID().toString()
+
+                val medicine = Medicine(
+                    medicineId = finalMedicineId,
                     name = name,
                     dosage = dosage,
                     type = medicineType,
@@ -104,40 +137,41 @@ class AddMedicineViewModel(
                 val schedulesToSave = mutableListOf<Schedule>()
 
                 if (enableReminder) {
-                    // ✨✨✨ SỬA LOGIC LƯU: Vòng lặp qua từng ngày ✨✨✨
                     var currentDate = startDate
-
-                    // Chạy vòng lặp từ ngày bắt đầu đến ngày kết thúc
                     while (!currentDate.isAfter(endDate)) {
-
-                        // Với mỗi ngày, tạo lịch cho tất cả các giờ đã chọn
                         specificTimes.forEach { time ->
                             val scheduleDateTime = currentDate.atTime(time)
                             val timestamp = scheduleDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
                             schedulesToSave.add(Schedule(
-                                scheduleId = UUID.randomUUID().toString(), // Tạo ID riêng cho mỗi lịch
-                                medicineId = newMedicineId,
+                                scheduleId = UUID.randomUUID().toString(),
+                                medicineId = finalMedicineId, // Dùng finalMedicineId
                                 specificTime = time,
                                 nextScheduledTimestamp = timestamp,
                                 reminderStatus = false,
-                                // userId sẽ được repository tự thêm vào
                             ))
                         }
-
-                        // Tăng thêm 1 ngày
                         currentDate = currentDate.plusDays(1)
                     }
 
-                    // Hẹn giờ (WorkManager) - Chỉ cần hẹn cho lần gần nhất sắp tới
                     if (specificTimes.isNotEmpty()) {
-                        scheduleNotification(newMedicineId, name, dosage, specificTimes[0])
+                        scheduleNotification(finalMedicineId, name, dosage, specificTimes[0])
                     }
                 }
 
-                repository.addMedicine(newMedicine, schedulesToSave)
-                uiMessage = "Thêm thuốc ${name} thành công!"
-                Log.d("AddMedicineVM", "Đã lưu thuốc vào DB thành công. Tổng số lịch: ${schedulesToSave.size}")
+                // ✨✨✨ PHÂN BIỆT ADD VÀ UPDATE ✨✨✨
+                if (medicineId != null) {
+                    // Chế độ SỬA: Gọi hàm update (đã thêm vào Repo ở bước trước)
+                    repository.updateMedicine(medicine, schedulesToSave)
+                    Log.d("AddMedicineVM", "Đã CẬP NHẬT thuốc: $name")
+                } else {
+                    // Chế độ THÊM: Gọi hàm add
+                    repository.addMedicine(medicine, schedulesToSave)
+                    Log.d("AddMedicineVM", "Đã THÊM MỚI thuốc: $name")
+                }
+
+                uiMessage = "Lưu thành công!"
+                onSuccess() // Gọi callback để quay về màn hình trước
 
             } catch (e: Exception) {
                 uiMessage = "Lỗi: ${e.message}"
@@ -147,7 +181,6 @@ class AddMedicineViewModel(
     }
 
     private fun scheduleNotification(medId: String, name: String, dose: String, time: LocalTime) {
-        // ... (Giữ nguyên logic hẹn giờ của bạn)
         val now = LocalDateTime.now()
         var targetTime = LocalDate.now().atTime(time)
 

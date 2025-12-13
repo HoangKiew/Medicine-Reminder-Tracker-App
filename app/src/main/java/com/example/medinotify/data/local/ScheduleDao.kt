@@ -46,6 +46,9 @@ interface ScheduleDao {
     @Query("DELETE FROM schedules")
     suspend fun clearAllSchedules()
 
+    @Query("DELETE FROM schedules WHERE medicineId = :medId")
+    suspend fun deleteSchedulesByMedicineId(medId: String)
+
     // (Các hàm getActiveSchedulesForMedicine, getSchedulesByDateRange có thể giữ lại hoặc bỏ nếu không dùng)
     @Query("SELECT * FROM schedules WHERE medicineId = :medicineId AND userId = :userId AND reminderStatus = 1")
     fun getActiveSchedulesForMedicine(medicineId: String, userId: String): Flow<List<ScheduleEntity>>

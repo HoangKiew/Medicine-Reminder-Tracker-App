@@ -131,16 +131,11 @@ private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHost
     composable(NavDestination.Register.route) {
         RegisterRoute(
             onBack = { navController.popBackStack() },
-
-            // ✨✨✨ ĐÃ SỬA LẠI ĐOẠN NÀY ✨✨✨
-            // Thay vì vào Home, ta chuyển về Login để người dùng đăng nhập lại
             onRegisterSuccess = {
                 navController.navigate(NavDestination.Login.route) {
-                    // Xóa màn hình Register khỏi ngăn xếp để khi back không quay lại đây
                     popUpTo(NavDestination.Register.route) { inclusive = true }
                 }
             },
-
             onLogin = { navController.popBackStack() }
         )
     }
@@ -185,7 +180,19 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         )
     }
 
-    composable(NavDestination.AddMedicine.route) {
+    // ✨✨✨ SỬA ĐỔI ĐỂ HỖ TRỢ CHỈNH SỬA THUỐC ✨✨✨
+    composable(
+        // Route cần khớp với định nghĩa trong NavDestination: "add_medicine?medicineId={medicineId}"
+        route = NavDestination.AddMedicine.route,
+        arguments = listOf(
+            navArgument("medicineId") {
+                type = NavType.StringType
+                nullable = true   // Cho phép null (để hỗ trợ thêm mới)
+                defaultValue = null
+            }
+        )
+    ) {
+        // ViewModel sẽ tự động lấy medicineId từ SavedStateHandle
         AddMedicineScreen(navController)
     }
 

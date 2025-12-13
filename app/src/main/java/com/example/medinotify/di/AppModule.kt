@@ -8,7 +8,6 @@ import com.example.medinotify.data.repository.MedicineRepository
 import com.example.medinotify.ui.screens.addmedicine.AddMedicineViewModel
 import com.example.medinotify.ui.screens.addmedicine.StartViewModel
 import com.example.medinotify.ui.screens.auth.login.LoginViewModel
-// ✅ IMPORT MỚI: RegisterViewModel
 import com.example.medinotify.ui.screens.auth.register.RegisterViewModel
 import com.example.medinotify.ui.screens.calendar.CalendarViewModel
 import com.example.medinotify.ui.screens.history.HistoryViewModel
@@ -24,14 +23,13 @@ import org.koin.dsl.module
 
 val appModule = module {
 
-    // --- CUNG CẤP CÁC SINGLETON (Đối tượng chỉ được tạo 1 lần trong suốt vòng đời app) ---
+    // --- CUNG CẤP CÁC SINGLETON ---
 
     // 1. Firebase Instances
     single { FirebaseAuth.getInstance() }
     single { FirebaseFirestore.getInstance() }
 
     // 2. Authentication Repository
-    // ✨✨✨ CẬP NHẬT: Thêm firestore vào đây để lưu tên người dùng ✨✨✨
     single<AuthRepository> {
         FirebaseAuthRepository(
             firebaseAuth = get(),
@@ -66,17 +64,18 @@ val appModule = module {
     single { WorkManager.getInstance(androidContext()) }
 
 
-    // --- CUNG CẤP CÁC VIEWMODELS (Đối tượng được tạo mới khi cần) ---
+    // --- CUNG CẤP CÁC VIEWMODELS ---
 
     viewModel { LoginViewModel(authRepository = get()) }
 
-    // ✨✨✨ THÊM MỚI: RegisterViewModel ✨✨✨
     viewModel { RegisterViewModel(authRepository = get()) }
 
+    // ✅ ĐÃ SỬA: Thêm savedStateHandle = get()
     viewModel {
         AddMedicineViewModel(
             repository = get(),
-            workManager = get()
+            workManager = get(),
+            savedStateHandle = get()
         )
     }
 

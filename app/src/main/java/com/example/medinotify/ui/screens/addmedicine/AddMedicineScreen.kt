@@ -1,11 +1,13 @@
 package com.example.medinotify.ui.screens.addmedicine
 
-import android.app.DatePickerDialog // ✅ Import cần thiết
+import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.DatePicker
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,7 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DateRange // ✅ Icon lịch
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -69,9 +71,6 @@ fun AddMedicineScreen(
     LaunchedEffect(uiMessage) {
         uiMessage?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            if (message.contains("thành công")) {
-                navController.popBackStack()
-            }
             viewModel.clearUiMessage()
         }
     }
@@ -80,64 +79,92 @@ fun AddMedicineScreen(
         modifier = Modifier.fillMaxSize().background(Color.White)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 8.dp).verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp,
+                vertical = 8.dp).verticalScroll(rememberScrollState())
         ) {
             // Header
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = mainPink)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        tint = mainPink)
                 }
-                Text("Thêm thuốc mới", Modifier.weight(1f), textAlign = TextAlign.Center, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = blueTitle)
+                Text("Thêm thuốc mới",
+                    Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                    color = blueTitle)
                 Spacer(Modifier.width(48.dp))
             }
             Spacer(Modifier.height(10.dp))
-            Text("Điền vào các ô và nhấn nút Lưu để thêm!", color = mainPink, fontSize = 15.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            Text("Điền vào các ô và nhấn nút Lưu để thêm!",
+                color = mainPink,
+                fontSize = 15.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(20.dp))
 
-            // Các ô nhập liệu cơ bản (Tên, Loại, Liều lượng, Số lượng) - GIỮ NGUYÊN
+            // Các ô nhập liệu cơ bản
             OutlinedTextField(
-                value = viewModel.name, onValueChange = viewModel::onNameChange,
-                label = { Row { Text("Tên thuốc"); if (viewModel.name.isEmpty()) Text(" *", color = Color.Red) } },
-                modifier = Modifier.fillMaxWidth(), colors = transparentColors
+                value = viewModel.name,
+                onValueChange = viewModel::onNameChange,
+                label = { Row { Text("Tên thuốc");
+                    if (viewModel.name.isEmpty()) Text(" *", color = Color.Red) } },
+                modifier = Modifier.fillMaxWidth(),
+                colors = transparentColors
             )
             Spacer(Modifier.height(15.dp))
 
             var expanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+            ExposedDropdownMenuBox(expanded = expanded,
+                onExpandedChange = { expanded = !expanded }) {
                 OutlinedTextField(
-                    value = viewModel.medicineType, onValueChange = {}, readOnly = true,
-                    label = { Row { Text("Loại thuốc"); if (viewModel.medicineType == "Chọn dạng thuốc") Text(" *", color = Color.Red) } },
-                    trailingIcon = { Icon(Icons.Filled.ArrowDropDown, null, tint = mainPink) },
+                    value = viewModel.medicineType, onValueChange = {},
+                    readOnly = true,
+                    label = { Row { Text("Loại thuốc");
+                        if (viewModel.medicineType == "Chọn dạng thuốc") Text(" *", color = Color.Red) } },
+                    trailingIcon = { Icon(Icons.Filled.ArrowDropDown,
+                        null, tint = mainPink) },
                     modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                     colors = transparentColors
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    types.forEach { DropdownMenuItem(text = { Text(it) }, onClick = { viewModel.onTypeChange(it); expanded = false }) }
+                    types.forEach { DropdownMenuItem(text = { Text(it) },
+                        onClick = { viewModel.onTypeChange(it); expanded = false }) }
                 }
             }
             Spacer(Modifier.height(15.dp))
 
             OutlinedTextField(
-                value = viewModel.dosage, onValueChange = viewModel::onDosageChange,
-                label = { Row { Text("Liều lượng"); if (viewModel.dosage.isEmpty()) Text(" *", color = Color.Red) } },
-                modifier = Modifier.fillMaxWidth(), colors = transparentColors
+                value = viewModel.dosage,
+                onValueChange = viewModel::onDosageChange,
+                label = { Row { Text("Liều lượng");
+                    if (viewModel.dosage.isEmpty()) Text(" *",
+                        color = Color.Red) } },
+                modifier = Modifier.fillMaxWidth(),
+                colors = transparentColors
             )
             Spacer(Modifier.height(15.dp))
 
             OutlinedTextField(
                 value = viewModel.quantity, onValueChange = viewModel::onQuantityChange,
-                label = { Row { Text("Số lượng"); if (viewModel.quantity.isEmpty()) Text(" *", color = Color.Red) } },
-                modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                label = { Row { Text("Số lượng");
+                    if (viewModel.quantity.isEmpty()) Text(" *", color = Color.Red) } },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 colors = transparentColors
             )
 
-            // ✨✨✨ PHẦN CHỌN NGÀY MỚI THÊM ✨✨✨
+            // --- PHẦN CHỌN NGÀY ---
             Spacer(Modifier.height(25.dp))
-            Text("Thời gian sử dụng", color = mainPink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text("Thời gian sử dụng",
+                color = mainPink,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(12.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                // Ô Bắt đầu
+            Row(modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween) {
                 DateSelectorField(
                     label = "Bắt đầu",
                     date = viewModel.startDate,
@@ -145,7 +172,6 @@ fun AddMedicineScreen(
                     modifier = Modifier.weight(1f).padding(end = 8.dp),
                     colors = transparentColors
                 )
-                // Ô Kết thúc
                 DateSelectorField(
                     label = "Kết thúc",
                     date = viewModel.endDate,
@@ -154,22 +180,25 @@ fun AddMedicineScreen(
                     colors = transparentColors
                 )
             }
-            // ✨✨✨ HẾT PHẦN CHỌN NGÀY ✨✨✨
-
 
             Spacer(Modifier.height(25.dp))
 
-            // Phần nhắc nhở (Giữ nguyên)
-            Text("Lời nhắc nhở", color = mainPink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            // Phần nhắc nhở
+            Text("Lời nhắc nhở",
+                color = mainPink,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(12.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Bật báo thức", color = Color.Gray)
+                Text("Bật báo thức",
+                    color = Color.Gray)
                 Spacer(Modifier.weight(1f))
                 Switch(
                     checked = viewModel.enableReminder,
                     onCheckedChange = viewModel::onEnableReminderChange,
-                    colors = SwitchDefaults.colors(checkedThumbColor = mainPink, checkedTrackColor = mainPink.copy(alpha = 0.4f))
+                    colors = SwitchDefaults.colors(checkedThumbColor = mainPink,
+                        checkedTrackColor = mainPink.copy(alpha = 0.4f))
                 )
             }
 
@@ -177,22 +206,31 @@ fun AddMedicineScreen(
 
             if (viewModel.enableReminder) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Giờ uống (${viewModel.specificTimes.size} lần):", color = blueTitle, fontSize = 16.sp)
+                    Text("Giờ uống (${viewModel.specificTimes.size} lần):",
+                        color = blueTitle, fontSize = 16.sp)
                     Spacer(Modifier.weight(1f))
                     Button(onClick = {
-                        TimePickerDialog(context, timePicker, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
+                        TimePickerDialog(context, timePicker,
+                            calendar.get(Calendar.HOUR_OF_DAY),
+                            calendar.get(Calendar.MINUTE), true).show()
                     }) { Text("Thêm giờ") }
                 }
                 Spacer(Modifier.height(12.dp))
                 FlowRow(Modifier.fillMaxWidth()) {
-                    viewModel.specificTimes.forEach { time -> TimeChip(time = time, onRemove = viewModel::removeSpecificTime, mainColor = mainPink) }
+                    viewModel.specificTimes.forEach { time -> TimeChip(time = time,
+                        onRemove = viewModel::removeSpecificTime,
+                        mainColor = mainPink) }
                 }
             }
 
             Spacer(Modifier.height(30.dp))
 
             Button(
-                onClick = viewModel::saveMedicine,
+                onClick = {
+                    viewModel.saveMedicine {
+                        navController.popBackStack()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().height(55.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(mainPink)
@@ -204,7 +242,6 @@ fun AddMedicineScreen(
     }
 }
 
-// ✨ Component chọn ngày dùng chung (DatePickerDialog)
 @Composable
 fun DateSelectorField(
     label: String,
@@ -226,21 +263,27 @@ fun DateSelectorField(
         date.dayOfMonth
     )
 
+    val interactionSource = remember { MutableInteractionSource() }
+
+    LaunchedEffect(interactionSource) {
+        interactionSource.interactions.collect { interaction ->
+            if (interaction is PressInteraction.Release) {
+                datePickerDialog.show()
+            }
+        }
+    }
+
     OutlinedTextField(
         value = date.format(dateFormatter),
         onValueChange = {},
         readOnly = true,
         label = { Text(label) },
-        trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, tint = Color(0xFFFF6B6B)) },
-        modifier = modifier.clickable { datePickerDialog.show() }, // Click vào toàn bộ ô để hiện lịch
-        enabled = false, // Vô hiệu hóa nhập tay để bắt buộc dùng click
-        colors = colors.copy(
-            disabledTextColor = Color.Black,
-            disabledLabelColor = Color(0xFF2C60FF),
-            disabledContainerColor = Color.Transparent,
-            disabledIndicatorColor = Color.Gray,
-            disabledTrailingIconColor = Color(0xFFFF6B6B)
-        )
+        trailingIcon = { Icon(Icons.Default.DateRange,
+            contentDescription = null,
+            tint = Color(0xFFFF6B6B)) },
+        modifier = modifier,
+        interactionSource = interactionSource,
+        colors = colors
     )
 }
 
@@ -255,8 +298,11 @@ fun TimeChip(time: LocalTime, onRemove: (LocalTime) -> Unit, mainColor: Color) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
         ) {
-            Text(time.format(DateTimeFormatter.ofPattern("HH:mm")), fontSize = 14.sp, color = mainColor)
-            Icon(Icons.Default.Close, contentDescription = "Xóa", modifier = Modifier.padding(start = 4.dp).size(16.dp).clickable { onRemove(time) }, tint = Color.Gray)
+            Text(time.format(DateTimeFormatter.ofPattern("HH:mm")),
+                fontSize = 14.sp, color = mainColor)
+            Icon(Icons.Default.Close, contentDescription = "Xóa",
+                modifier = Modifier.padding(start = 4.dp).size(16.dp).clickable { onRemove(time) },
+                tint = Color.Gray)
         }
     }
 }
