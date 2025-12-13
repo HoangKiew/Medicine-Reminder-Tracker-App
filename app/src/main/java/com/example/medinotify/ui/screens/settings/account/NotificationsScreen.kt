@@ -46,7 +46,7 @@ fun NotificationsScreen(navController: NavController) {
     // Khai báo màu sắc và Context
     val backgroundColor = Color(0xFFF5F5F5)
     val cardColor = Color.White
-    val primaryColor = Color(0xFF6395EE)
+    val primaryColor = Color(0xFF2C60FF)
     val textColor = Color(0xFF2D2D2D)
     val context = LocalContext.current
 

@@ -29,7 +29,7 @@ import androidx.navigation.compose.rememberNavController
 @Composable
 fun HelpAndSupportScreen(navController: NavController) {
     // Định nghĩa màu sắc trực tiếp (đã thống nhất)
-    val PrimaryBlue = Color(0xFF6395EE)
+    val PrimaryBlue = Color(0xFF2C60FF)
     val LightGreyBackground = Color(0xFFF5F5F5)
 
     val context = LocalContext.current

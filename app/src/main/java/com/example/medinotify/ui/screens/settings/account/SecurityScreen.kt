@@ -27,7 +27,7 @@ import com.example.medinotify.R
 fun SecurityScreen(navController: NavController) {
     val backgroundColor = Color(0xFFF5F5F5)
     val cardColor = Color.White
-    val primaryColor = Color(0xFF6395EE)
+    val primaryColor = Color(0xFF2C60FF)
     val textColor = Color(0xFF2D2D2D)
 
     // Trạng thái cho Switch (được chia sẻ với Dialog)

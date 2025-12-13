@@ -1,5 +1,9 @@
 package com.example.medinotify.ui.screens.settings
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast // ✅ Import Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,14 +18,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-// ✨ QUAN TRỌNG: Import NavDestination để sử dụng route chuẩn xác ✨
 import com.example.medinotify.ui.navigation.NavDestination
+import kotlinx.coroutines.Dispatchers // ✅ Import Dispatchers
+import kotlinx.coroutines.launch // ✅ Import launch
+import kotlinx.coroutines.withContext // ✅ Import withContext
+import java.io.File // ✅ Import File
 
 data class SettingsItem(
     val icon: ImageVector,
@@ -33,6 +41,10 @@ data class SettingsItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController) {
+    val context = LocalContext.current
+    // ✅ Tạo scope để chạy các tác vụ ngầm (như xóa file)
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         containerColor = Color(0xFFF5F5F5)
     ) { paddingValues ->
@@ -92,14 +104,12 @@ fun SettingsScreen(navController: NavController) {
                             SettingsMenuItem(
                                 icon = Icons.Default.Person,
                                 title = "Chỉnh sửa hồ sơ",
-                                // Sửa: Dùng NavDestination
                                 onClick = { navController.navigate(NavDestination.Profile.route) }
                             )
                             Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
                             SettingsMenuItem(
                                 icon = Icons.Default.Notifications,
                                 title = "Thông báo",
-                                // ✅ ĐÃ SỬA: Dùng NavDestination.Notifications.route thay vì chuỗi cứng
                                 onClick = { navController.navigate(NavDestination.Notifications.route) }
                             )
                         }
@@ -121,11 +131,9 @@ fun SettingsScreen(navController: NavController) {
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column {
-                            // Xóa Divider thừa ở đầu danh sách này nếu không cần thiết
                             SettingsMenuItem(
                                 icon = Icons.Default.Help,
                                 title = "Trợ giúp & Hỗ trợ",
-                                // ✅ ĐÃ SỬA: Dùng NavDestination.HelpAndSupport.route
                                 onClick = { navController.navigate(NavDestination.HelpAndSupport.route) }
                             )
                             Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
@@ -139,6 +147,7 @@ fun SettingsScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
+                // Bộ nhớ đệm và di động Section
                 item {
                     SettingsSectionTitle("Bộ nhớ đệm và di động")
                     Spacer(modifier = Modifier.height(8.dp))
@@ -152,22 +161,29 @@ fun SettingsScreen(navController: NavController) {
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column {
+                            // ✨✨✨ TÍNH NĂNG DỌN BỘ NHỚ ĐỆM ✨✨✨
                             SettingsMenuItem(
                                 icon = Icons.Default.Delete,
                                 title = "Dọn bộ nhớ đệm",
-                                onClick = { /* TODO */ }
-                            )
-                            Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
-                            SettingsMenuItem(
-                                icon = Icons.Default.DataUsage,
-                                title = "Tiết kiệm dữ liệu",
-                                onClick = { /* TODO */ }
+                                onClick = {
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            deleteCache(context)
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(context, "Đã dọn sạch bộ nhớ đệm!", Toast.LENGTH_SHORT).show()
+                                            }
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        }
+                                    }
+                                }
                             )
                         }
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
+                // Actions Section
                 item {
                     SettingsSectionTitle("Actions")
                     Spacer(modifier = Modifier.height(8.dp))
@@ -184,13 +200,15 @@ fun SettingsScreen(navController: NavController) {
                             SettingsMenuItem(
                                 icon = Icons.Default.Flag,
                                 title = "Báo cáo sự cố",
-                                onClick = { /* TODO */ }
-                            )
-                            Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
-                            SettingsMenuItem(
-                                icon = Icons.Default.PersonAdd,
-                                title = "Thêm tài khoản",
-                                onClick = { /* TODO */ }
+                                onClick = {
+                                    val url = "https://forms.gle/VNsjfURN1jxA3WaU7"
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                }
                             )
                             Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
                             SettingsMenuItem(
@@ -198,7 +216,6 @@ fun SettingsScreen(navController: NavController) {
                                 title = "Đăng xuất",
                                 textColor = Color(0xFFFF5252),
                                 onClick = {
-                                    // Sửa: Dùng NavDestination cho Login
                                     navController.navigate(NavDestination.Login.route) {
                                         popUpTo(0) { inclusive = true }
                                     }
@@ -212,6 +229,37 @@ fun SettingsScreen(navController: NavController) {
         }
     }
 }
+
+// ✨✨✨ HÀM XÓA CACHE (Helper Function) ✨✨✨
+fun deleteCache(context: Context) {
+    try {
+        val dir = context.cacheDir
+        deleteDir(dir)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+// Hàm xóa đệ quy thư mục
+fun deleteDir(dir: File?): Boolean {
+    if (dir != null && dir.isDirectory) {
+        val children = dir.list()
+        if (children != null) {
+            for (i in children.indices) {
+                val success = deleteDir(File(dir, children[i]))
+                if (!success) {
+                    return false
+                }
+            }
+        }
+        return dir.delete()
+    } else if (dir != null && dir.isFile) {
+        return dir.delete()
+    }
+    return false
+}
+
+// ... Các Composable phụ khác giữ nguyên ...
 
 @Composable
 fun SettingsSectionTitle(title: String) {
