@@ -10,6 +10,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+
+// Import các màn hình
 import com.example.medinotify.ui.components.BottomBar
 import com.example.medinotify.ui.screens.addmedicine.AddMedicineScreen
 import com.example.medinotify.ui.screens.addmedicine.StartScreen
@@ -19,6 +23,11 @@ import com.example.medinotify.ui.screens.history.MedicineHistoryScreen
 import com.example.medinotify.ui.screens.home.HomeScreen
 import com.example.medinotify.ui.screens.profile.ProfileScreen
 import com.example.medinotify.ui.screens.settings.SettingsScreen
+import com.example.medinotify.ui.screens.settings.HelpAndSupportScreen // ✨ MỚI: Import màn hình Trợ giúp
+import com.example.medinotify.ui.screens.settings.account.NotificationsScreen
+import com.example.medinotify.ui.screens.settings.account.SecurityScreen
+
+// Import các màn hình Auth
 import com.example.medinotify.ui.screens.auth.login.LoginRoute
 import com.example.medinotify.ui.screens.auth.password.ForgotPasswordRoute
 import com.example.medinotify.ui.screens.auth.password.ResetPasswordRoute
@@ -26,10 +35,6 @@ import com.example.medinotify.ui.screens.auth.password.ResetPasswordSuccessScree
 import com.example.medinotify.ui.screens.auth.password.VerifyCodeRoute
 import com.example.medinotify.ui.screens.auth.register.RegisterRoute
 import com.example.medinotify.ui.screens.auth.splash.SplashScreen
-import androidx.navigation.navArgument
-import androidx.navigation.NavType
-import com.example.medinotify.ui.screens.settings.account.NotificationsScreen
-import com.example.medinotify.ui.screens.settings.account.SecurityScreen
 
 @Composable
 fun MedinotifyApp(
@@ -75,10 +80,8 @@ private fun NavHostController.navigateToHome() {
 private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHostController) {
     composable(NavDestination.Splash.route) {
         SplashScreen(
-            // ✅ SỬA LỖI 1: Đã xóa tham số 'onStart' không tồn tại
             onLogin = { navController.navigate(NavDestination.Login.route) },
             onRegister = { navController.navigate(NavDestination.Register.route) }
-            // Gợi ý: bạn có thể cần thêm onContinue = { navController.navigateToHome() }
         )
     }
 
@@ -160,7 +163,6 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
 
     // Add Medicine Flow
     composable(NavDestination.StartAddMedicine.route) {
-        // ✅ SỬA LỖI 2: Truyền lambda vào đúng tham số 'onStart'
         StartScreen(onStart = {
             navController.navigate(NavDestination.AddMedicine.route) {
                 launchSingleTop = true
@@ -189,5 +191,10 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
     // Màn hình Bảo vệ
     composable(NavDestination.Security.route) {
         SecurityScreen(navController = navController)
+    }
+
+    // ✨ MỚI: Màn hình Trợ giúp & Hỗ trợ
+    composable(NavDestination.HelpAndSupport.route) {
+        HelpAndSupportScreen(navController = navController)
     }
 }

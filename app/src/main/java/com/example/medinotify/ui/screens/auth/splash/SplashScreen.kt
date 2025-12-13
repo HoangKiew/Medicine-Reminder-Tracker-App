@@ -119,31 +119,6 @@ fun SplashScreen(
                 )
             }
         }
-
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 96.dp, vertical = 18.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Home,
-                contentDescription = null,
-                tint = Color(0xFF9E9E9E)
-            )
-            Icon(
-                imageVector = Icons.Filled.Circle,
-                contentDescription = null,
-                tint = Color(0xFF292929)
-            )
-            Icon(
-                imageVector = Icons.Filled.Stop,
-                contentDescription = null,
-                tint = Color(0xFF9E9E9E)
-            )
-        }
     }
 }
 

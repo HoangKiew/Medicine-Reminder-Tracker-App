@@ -20,6 +20,8 @@ sealed class NavDestination(val route: String) {
     object MedicineHistory : NavDestination("medicine_history")
     object Profile : NavDestination("profile")
 
+    object HelpAndSupport : NavDestination("settings/help_and_support")
+
     // ---- Nhóm màn hình Chi tiết & Luồng chức năng ----
     // Màn hình chi tiết lịch sử (sử dụng tham số 'date')
     object MedicineHistoryDetail : NavDestination("medicine_history_detail/{date}") {

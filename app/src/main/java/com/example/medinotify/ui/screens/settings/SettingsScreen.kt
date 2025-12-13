@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+// ✨ QUAN TRỌNG: Import NavDestination để sử dụng route chuẩn xác ✨
+import com.example.medinotify.ui.navigation.NavDestination
 
 data class SettingsItem(
     val icon: ImageVector,
@@ -90,13 +92,15 @@ fun SettingsScreen(navController: NavController) {
                             SettingsMenuItem(
                                 icon = Icons.Default.Person,
                                 title = "Chỉnh sửa hồ sơ",
-                                onClick = { navController.navigate("profile") }
+                                // Sửa: Dùng NavDestination
+                                onClick = { navController.navigate(NavDestination.Profile.route) }
                             )
                             Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
                             SettingsMenuItem(
                                 icon = Icons.Default.Notifications,
                                 title = "Thông báo",
-                                onClick = { navController.navigate("settings/account/notifications") }
+                                // ✅ ĐÃ SỬA: Dùng NavDestination.Notifications.route thay vì chuỗi cứng
+                                onClick = { navController.navigate(NavDestination.Notifications.route) }
                             )
                         }
                     }
@@ -117,11 +121,12 @@ fun SettingsScreen(navController: NavController) {
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column {
-                            Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
+                            // Xóa Divider thừa ở đầu danh sách này nếu không cần thiết
                             SettingsMenuItem(
                                 icon = Icons.Default.Help,
                                 title = "Trợ giúp & Hỗ trợ",
-                                onClick ={ navController.navigate("settings/support/help_and_support") }
+                                // ✅ ĐÃ SỬA: Dùng NavDestination.HelpAndSupport.route
+                                onClick = { navController.navigate(NavDestination.HelpAndSupport.route) }
                             )
                             Divider(color = Color(0xFFE0E0E0), thickness = 0.5.dp)
                             SettingsMenuItem(
@@ -193,8 +198,8 @@ fun SettingsScreen(navController: NavController) {
                                 title = "Đăng xuất",
                                 textColor = Color(0xFFFF5252),
                                 onClick = {
-                                    // TODO: Handle logout
-                                    navController.navigate("login") {
+                                    // Sửa: Dùng NavDestination cho Login
+                                    navController.navigate(NavDestination.Login.route) {
                                         popUpTo(0) { inclusive = true }
                                     }
                                 }
