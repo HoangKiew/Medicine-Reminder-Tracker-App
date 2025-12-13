@@ -11,6 +11,8 @@ import com.example.medinotify.ui.screens.history.HistoryViewModel
 import com.example.medinotify.ui.screens.home.HomeViewModel
 import com.example.medinotify.ui.screens.profile.ProfileViewModel
 import com.example.medinotify.ui.screens.addmedicine.StartViewModel
+import com.example.medinotify.ui.screens.auth.register.RegisterViewModel
+import com.example.medinotify.ui.screens.auth.splash.SplashViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import org.koin.android.ext.koin.androidContext
@@ -26,7 +28,6 @@ val appModule = module {
     single { FirebaseFirestore.getInstance() }
 
     // 2. Authentication Repository
-    // ✅ SỬA 1: Khai báo AuthRepository. Khi có yêu cầu cho AuthRepository, Koin sẽ cung cấp FirebaseAuthRepository.
     // Koin sẽ tự động inject 'FirebaseAuth' đã được định nghĩa ở trên vào đây.
     single<AuthRepository> { FirebaseAuthRepository(firebaseAuth = get()) }
 
@@ -56,8 +57,6 @@ val appModule = module {
     }
 
     // --- CUNG CẤP CÁC VIEWMODELS (Đối tượng được tạo mới khi cần) ---
-
-    // ✅ SỬA 2: Sửa lại LoginViewModel để nhận `authRepository` thay vì `repository`.
     // Koin sẽ tự động inject `AuthRepository` đã được định nghĩa ở mục (2) vào đây.
     viewModel { LoginViewModel(authRepository = get()) }
 
@@ -68,5 +67,8 @@ val appModule = module {
     viewModel { HistoryViewModel(repository = get()) }
     viewModel { ProfileViewModel(repository = get()) }
     viewModel { StartViewModel(repository = get()) }
+    viewModel { RegisterViewModel(authRepository = get()) }
+    viewModel { SplashViewModel() } // ✅ THÊM DÒNG NÀY
+    viewModel { LoginViewModel(authRepository = get()) }
 }
 

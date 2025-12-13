@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
+import androidx.room.TypeConverters // ✅ BƯỚC 1: Đảm bảo có import này
 import com.example.medinotify.data.model.MedicineEntity
 import com.example.medinotify.data.model.ScheduleEntity
 import com.example.medinotify.data.model.LogEntryEntity
@@ -18,6 +18,7 @@ import com.example.medinotify.data.model.LogEntryEntity
     version = 3,
     exportSchema = false
 )
+@TypeConverters(Converters::class) // ✅ BƯỚC 2: THÊM DÒNG NÀY NGAY ĐÂY
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun medicineDao(): MedicineDao
@@ -35,9 +36,6 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "medinotify_database"
                 )
-                    // Gợi ý: Trong quá trình phát triển, dòng này rất hữu ích
-                    // Nó sẽ tự động xóa và tạo lại DB nếu bạn thay đổi cấu trúc (schema)
-                    // mà không tăng version. Hãy xóa nó đi trước khi phát hành ứng dụng.
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

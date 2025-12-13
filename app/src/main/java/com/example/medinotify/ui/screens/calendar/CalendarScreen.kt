@@ -31,7 +31,6 @@ import java.util.*
 // I. CÁC HÀM COMPOSABLE PHỤ
 // =========================================================================
 
-// ✅ SỬA 1: Cập nhật MedicineCalendarCard để nhận vào ScheduleWithMedicine
 @Composable
 fun MedicineCalendarCard(item: ScheduleWithMedicine) {
     Card(
@@ -274,7 +273,6 @@ fun CalendarScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    // ... (Day Labels không thay đổi)
                     listOf("CN", "T2", "T3", "T4", "T5", "T6", "T7").forEach { day ->
                         Text(
                             text = day,

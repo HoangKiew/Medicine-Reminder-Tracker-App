@@ -33,4 +33,8 @@ interface MedicineDao {
     /** ✨ HÀM MỚI: Xóa thuốc trực tiếp bằng ID (Tối ưu hơn) */
     @Query("DELETE FROM medicines WHERE medicineId = :medicineId")
     suspend fun deleteMedicineById(medicineId: String)
+
+    @Query("SELECT * FROM medicines WHERE userId = :userId")
+    suspend fun getAllMedicinesList(userId: String): List<MedicineEntity>
+
 }

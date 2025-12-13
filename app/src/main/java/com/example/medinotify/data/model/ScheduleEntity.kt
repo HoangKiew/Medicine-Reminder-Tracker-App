@@ -11,7 +11,6 @@ import androidx.room.PrimaryKey
  */
 @Entity(
     tableName = "schedules",
-    // ✅ SỬA 1: Thêm ForeignKey để đảm bảo tính toàn vẹn dữ liệu
     // Nếu một Medicine bị xóa, tất cả các Schedule liên quan cũng sẽ bị xóa.
     foreignKeys = [
         ForeignKey(
@@ -21,7 +20,6 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    // ✅ SỬA 2: Thêm Index để tăng tốc độ truy vấn theo medicineId
     indices = [Index(value = ["medicineId"])]
 )
 data class ScheduleEntity(
@@ -31,7 +29,6 @@ data class ScheduleEntity(
     val userId: String,
     val medicineId: String,
 
-    // ✅ SỬA 3: Sử dụng String để lưu trữ thời gian trong database
     // Kiểu dữ liệu LocalTime không thể lưu trực tiếp.
     // Mapper sẽ đảm nhiệm việc chuyển đổi giữa String và LocalTime.
     val specificTime: String, // Định dạng "HH:mm"

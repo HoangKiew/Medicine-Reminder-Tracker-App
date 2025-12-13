@@ -6,19 +6,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.medinotify.ui.components.BottomBar
 import com.example.medinotify.ui.screens.addmedicine.AddMedicineScreen
 import com.example.medinotify.ui.screens.addmedicine.StartScreen
-import com.example.medinotify.ui.screens.calendar.CalendarScreen
-import com.example.medinotify.ui.screens.history.MedicineHistoryDetailScreen
-import com.example.medinotify.ui.screens.history.MedicineHistoryScreen
-import com.example.medinotify.ui.screens.home.HomeScreen
-import com.example.medinotify.ui.screens.profile.ProfileScreen
-import com.example.medinotify.ui.screens.settings.SettingsScreen
 import com.example.medinotify.ui.screens.auth.login.LoginRoute
 import com.example.medinotify.ui.screens.auth.password.ForgotPasswordRoute
 import com.example.medinotify.ui.screens.auth.password.ResetPasswordRoute
@@ -26,8 +22,12 @@ import com.example.medinotify.ui.screens.auth.password.ResetPasswordSuccessScree
 import com.example.medinotify.ui.screens.auth.password.VerifyCodeRoute
 import com.example.medinotify.ui.screens.auth.register.RegisterRoute
 import com.example.medinotify.ui.screens.auth.splash.SplashScreen
-import androidx.navigation.navArgument
-import androidx.navigation.NavType
+import com.example.medinotify.ui.screens.calendar.CalendarScreen
+import com.example.medinotify.ui.screens.history.MedicineHistoryDetailScreen
+import com.example.medinotify.ui.screens.history.MedicineHistoryScreen
+import com.example.medinotify.ui.screens.home.HomeScreen
+import com.example.medinotify.ui.screens.profile.ProfileScreen
+import com.example.medinotify.ui.screens.settings.SettingsScreen
 import com.example.medinotify.ui.screens.settings.account.NotificationsScreen
 import com.example.medinotify.ui.screens.settings.account.SecurityScreen
 
@@ -136,7 +136,12 @@ private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHost
 private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHostController) {
     // Home
     composable(NavDestination.Home.route) {
-        HomeScreen(navController)
+        HomeScreen(
+            onNavigateToCalendar = { navController.navigate(NavDestination.Calendar.route) },
+            onAddMedicine = { navController.navigate(NavDestination.StartAddMedicine.route) },
+            onNavigateToProfile = { navController.navigate(NavDestination.Profile.route) },
+            onNavigateToSettings = { navController.navigate(NavDestination.Settings.route) }
+        )
     }
 
     // Calendar

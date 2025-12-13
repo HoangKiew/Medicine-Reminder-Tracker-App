@@ -24,8 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import org.koin.androidx.compose.koinViewModel
-// ✅ SỬA 1: Không cần import ViewModel nữa, lớp UI Model sẽ ở file riêng
-// import com.example.medinotify.ui.screens.history.HistoryViewModel
+import com.example.medinotify.data.model.MedicineHistoryUi
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale

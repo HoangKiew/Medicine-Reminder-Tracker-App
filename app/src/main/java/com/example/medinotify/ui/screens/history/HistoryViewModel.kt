@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.medinotify.data.domain.LogEntry
 import com.example.medinotify.data.domain.Medicine
 import com.example.medinotify.data.repository.MedicineRepository
+import com.example.medinotify.data.model.MedicineHistoryUi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import java.time.Instant
@@ -12,19 +13,20 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-// Các hằng số để tránh "magic strings"
+// Giả định LogStatus là object trong file này
 object LogStatus {
     const val TAKEN = "TAKEN"
     const val SKIPPED = "SKIPPED"
 }
 
-// Data Class để hiển thị trên UI (Giữ nguyên)
+// Data class cho UI (được cung cấp trước đó)
 data class MedicineHistoryUi(
     val id: String,
     val name: String,
     val dosage: String,
-    val time: String, // Giờ uống (HH:mm)
-    val isTaken: Boolean // True nếu status là TAKEN
+    val time: String,
+    val isTaken: Boolean,
+    val intakeTime: Long
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -38,36 +40,30 @@ class HistoryViewModel(
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
-    // Lấy userId một lần và tái sử dụng
     private val userId = repository.getCurrentUserId()
 
-    // Flow chính: Lấy dữ liệu LogEntry dựa trên ngày (LocalDate)
+    // 1. Flow: Lấy LogEntry cho ngày được chọn (sử dụng logic múi giờ đã sửa trong Repository)
     private val logEntriesForSelectedDate: Flow<List<LogEntry>> =
         _selectedDate.flatMapLatest { date ->
             if (userId == null) {
                 return@flatMapLatest flowOf(emptyList())
             }
-
-            // Chuyển LocalDate thành epoch milliseconds
-            val dateStart = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val dateEnd = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
-
-            // Gọi hàm repository với khoảng thời gian đã tính
-            repository.getLogHistoryForDateRange(dateStart, dateEnd)
+            repository.getLogEntriesForDate(date) // Sử dụng hàm đã đúng logic thời gian
         }
 
-    // Flow trung gian: Ánh xạ LogEntry sang UI Model
+    // 2. Flow: Mapping và Kết hợp LogEntry với Medicine (đã tối ưu hóa bằng combine)
     private val mappedHistoryUi: Flow<List<MedicineHistoryUi>> = logEntriesForSelectedDate
-        .transformLatest { logList ->
-            // Lấy danh sách thuốc 1 lần duy nhất để tối ưu
-            val medicineMap = repository.getAllMedicines().first().associateBy { it.medicineId }
+        .combine(repository.getAllMedicines()) { logList, medicineList ->
+            val medicineMap = medicineList.associateBy { it.medicineId }
+
             val mappedList = logList.mapNotNull { logEntry ->
                 mapLogEntryToUi(logEntry, medicineMap[logEntry.medicineId])
             }
-            emit(mappedList.sortedBy { it.time }) // Sắp xếp theo giờ uống
+            // Sắp xếp theo intakeTime giảm dần (mới nhất lên đầu)
+            mappedList.sortedByDescending { it.intakeTime }
         }
 
-    // Flow cuối cùng để UI lắng nghe: Kết hợp dữ liệu đã map với chuỗi tìm kiếm
+    // 3. Flow: Lọc theo tìm kiếm
     val filteredHistory: StateFlow<List<MedicineHistoryUi>> =
         combine(mappedHistoryUi, _searchQuery) { historyList, query ->
             if (query.isBlank()) {
@@ -91,14 +87,9 @@ class HistoryViewModel(
         _selectedDate.value = newDate
     }
 
-    /**
-     * Hàm Ánh xạ LogEntry sang UI Model.
-     * Hàm này không cần 'suspend' nữa vì thông tin Medicine đã được cung cấp.
-     */
     private fun mapLogEntryToUi(logEntry: LogEntry, medicine: Medicine?): MedicineHistoryUi? {
         if (medicine == null) return null
 
-        // ✅ SỬA 1: Sử dụng thuộc tính 'intakeTime' đúng từ lớp LogEntry mới
         val timeString = Instant.ofEpochMilli(logEntry.intakeTime)
             .atZone(ZoneId.systemDefault())
             .toLocalTime()
@@ -109,8 +100,8 @@ class HistoryViewModel(
             name = medicine.name,
             dosage = medicine.dosage,
             time = timeString,
-            // ✅ SỬA 2: Sử dụng hằng số để kiểm tra trạng thái
-            isTaken = logEntry.status == LogStatus.TAKEN
+            intakeTime = logEntry.intakeTime,
+            isTaken = logEntry.status == LogStatus.TAKEN // Dùng hằng số String
         )
     }
 }

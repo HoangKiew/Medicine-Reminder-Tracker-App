@@ -24,16 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import org.koin.androidx.compose.koinViewModel
-// ✅ BƯỚC 1: Xóa các import cũ không cần thiết
-// import java.text.SimpleDateFormat
-// import java.util.Calendar
-// import java.util.Date
+import com.example.medinotify.data.model.MedicineHistoryUi
 import java.time.LocalDate // Sử dụng API mới
 import java.time.format.DateTimeFormatter // Sử dụng API mới
 import java.util.Locale
-
-// Lớp data class MedicineHistoryUi đã được chuyển ra file riêng hoặc ở trong ViewModel
-// nên không cần import hoặc khai báo ở đây nữa.
+import java.time.ZoneId
+import java.time.Instant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,27 +39,19 @@ fun MedicineHistoryScreen(
 ) {
     val context = LocalContext.current
 
-    // ✅ SỬA 2: Lắng nghe trạng thái mới từ ViewModel
-    val searchQuery by viewModel.searchQuery.collectAsState()
     val historyList by viewModel.filteredHistory.collectAsState()
-    val selectedDate by viewModel.selectedDate.collectAsState() // Sử dụng 'selectedDate' kiểu LocalDate
+    val selectedDate by viewModel.selectedDate.collectAsState()
 
-    // Định dạng ngày hiển thị từ LocalDate
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault()) }
-    val displayedDate = remember(selectedDate) {
-        selectedDate.format(dateFormatter)
-    }
 
-    // ✅ SỬA 3: Logic DatePickerDialog làm việc hoàn toàn với LocalDate
     val datePickerDialog = DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->
-            // Tạo đối tượng LocalDate mới và gọi ViewModel. `month` của DatePicker bắt đầu từ 0.
             val newDate = LocalDate.of(year, month + 1, dayOfMonth)
             viewModel.onDateSelected(newDate)
         },
         selectedDate.year,
-        selectedDate.monthValue - 1, // `monthValue` của LocalDate bắt đầu từ 1, cần trừ đi 1.
+        selectedDate.monthValue - 1,
         selectedDate.dayOfMonth
     )
 
@@ -84,7 +72,6 @@ fun MedicineHistoryScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Icon Lịch giờ có thể bấm để mở DatePicker
                 Icon(
                     Icons.Filled.DateRange,
                     contentDescription = "Calendar",
@@ -93,7 +80,6 @@ fun MedicineHistoryScreen(
                         .size(28.dp)
                         .clickable { datePickerDialog.show() }
                 )
-                // Các icon khác không thay đổi
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.Person,
@@ -113,7 +99,6 @@ fun MedicineHistoryScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Title
             Text(
                 "Lịch sử uống thuốc",
                 fontSize = 22.sp,
@@ -122,80 +107,56 @@ fun MedicineHistoryScreen(
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
 
-            // Hiển thị ngày đang xem (dưới dạng TextField có thể bấm)
-            OutlinedTextField(
-                value = displayedDate,
-                onValueChange = { },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp)
-                    .clickable { datePickerDialog.show() }, // Mở DatePicker khi nhấn
-                placeholder = { Text("dd/mm/yyyy") },
-                trailingIcon = {
-                    Icon(
-                        Icons.Default.DateRange,
-                        contentDescription = "Chọn ngày",
-                        modifier = Modifier.clickable { datePickerDialog.show() }
-                    )
-                },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color.LightGray,
-                    focusedBorderColor = Color(0xFF2C60FF),
-                    unfocusedContainerColor = Color.White,
-                    focusedContainerColor = Color.White
-                ),
-                readOnly = true, // Chỉ cho phép thay đổi qua DatePicker
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Search field
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = viewModel::onSearchQueryChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                placeholder = { Text("Tìm kiếm theo tên thuốc") },
-                trailingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color.LightGray,
-                    focusedBorderColor = Color(0xFF2C60FF),
-                    unfocusedContainerColor = Color.White,
-                    focusedContainerColor = Color.White
-                ),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Medicine List
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 20.dp)
+                    .padding(horizontal = 20.dp, vertical = 8.dp)
             ) {
-                if (historyList.isEmpty()) {
+                // Nhóm các item theo ngày
+                val groupedByDate = historyList.groupBy {
+                    // ✅ SỬA LỖI: Bây giờ `it.intakeTime` đã tồn tại
+                    Instant.ofEpochMilli(it.intakeTime).atZone(ZoneId.systemDefault()).toLocalDate()
+                }
+
+                if (groupedByDate.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier.fillParentMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("Không có dữ liệu cho ngày này.", color = Color.Gray)
+                            Text("Không có lịch sử uống thuốc.", color = Color.Gray)
                         }
                     }
                 } else {
-                    items(historyList, key = { it.id }) { medicine ->
-                        MedicineHistoryItem(medicine = medicine)
-                        Spacer(modifier = Modifier.height(12.dp))
+                    // ✅ SỬA LỖI: Chỉ định rõ kiểu dữ liệu cho trình biên dịch
+                    groupedByDate.forEach { (date: LocalDate, itemsForDate: List<MedicineHistoryUi>) ->
+                        // Header cho mỗi ngày
+                        item {
+                            val dateText = date.format(DateTimeFormatter.ofPattern("EEEE, dd MMMM, yyyy", Locale("vi")))
+                            Text(
+                                text = dateText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("vi")) else it.toString() },
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(vertical = 8.dp),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        // Danh sách thuốc cho ngày đó
+                        items(itemsForDate, key = { it.id }) { medicine ->
+                            Box(
+                                modifier = Modifier.clickable {
+                                    val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                                    navController.navigate("medicine_history_detail/$dateString")
+                                }
+                            ) {
+                                MedicineHistoryItem(medicine = medicine)
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
                     }
                 }
             }
 
-            // Back to home button
             Button(
                 onClick = { navController.popBackStack() },
                 modifier = Modifier
