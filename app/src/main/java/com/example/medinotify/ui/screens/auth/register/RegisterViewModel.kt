@@ -1,10 +1,12 @@
 package com.example.medinotify.ui.screens.auth.register
 
+import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.medinotify.data.auth.AuthRepository // ✅ Import Repository
-import com.example.medinotify.data.auth.AuthResult     // ✅ Import Result
+import com.example.medinotify.data.auth.AuthRepository
+import com.example.medinotify.data.auth.AuthResult
+import com.example.medinotify.data.repository.MedicineRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -20,12 +22,14 @@ data class RegisterUiState(
     val confirmPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val navigateToLogin: Boolean = false
+    val navigateToLogin: Boolean = false,
+    val isRegistered: Boolean = false
 )
 
 class RegisterViewModel(
-    // ✅ Tiêm AuthRepository vào constructor để kết nối Firebase
-    private val authRepository: AuthRepository
+    // ✅ Dependency Injection: Nhận cả Auth và Medicine Repo
+    private val authRepository: AuthRepository,
+    private val medicineRepository: MedicineRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
@@ -65,6 +69,7 @@ class RegisterViewModel(
         val trimmedEmail = current.email.trim()
         val digitsOnlyPhone = current.phone.filter { it.isDigit() }
 
+        // --- Validation Logic (Giữ nguyên) ---
         val error = when {
             trimmedName.length < 3 -> "Vui lòng nhập đầy đủ họ tên."
             !trimmedName.contains(" ") -> "Vui lòng nhập đầy đủ họ tên."
@@ -82,37 +87,42 @@ class RegisterViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    isLoading = true,
-                    errorMessage = null
-                )
-            }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            // ✨✨✨ GỌI HÀM ĐĂNG KÝ THỰC TẾ TỪ REPOSITORY ✨✨✨
+            // ✅ FIX LỖI: Gọi hàm signUp với tên tham số (pass, name) khớp với AuthRepository
             val result = authRepository.signUp(
                 email = trimmedEmail,
-                pass = current.password,
-                name = trimmedName
+                pass = current.password,     // Dùng 'pass'
+                name = trimmedName           // Thêm 'name'
             )
 
             when (result) {
                 is AuthResult.Success -> {
-                    // Đăng ký thành công -> Chuyển hướng về màn hình Login
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            navigateToLogin = true
-                        )
+                    try {
+                        // KÍCH HOẠT ĐỒNG BỘ: Tải dữ liệu mẫu/mới về Room
+                        medicineRepository.syncDataFromFirebase()
+                        Log.d("RegisterVM", "Data synced successfully after registration.")
+
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isRegistered = true,
+                                navigateToLogin = true
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.e("RegisterVM", "Failed to sync data after registration: ${e.message}")
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = "Đăng ký thành công, nhưng không thể tải dữ liệu ban đầu."
+                            )
+                        }
                     }
                 }
                 is AuthResult.Error -> {
-                    // Đăng ký thất bại -> Hiển thị lỗi
                     _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
+                        it.copy(isLoading = false, errorMessage = result.message)
                     }
                 }
             }
@@ -120,6 +130,11 @@ class RegisterViewModel(
     }
 
     fun onNavigationHandled() {
-        _uiState.update { it.copy(navigateToLogin = false) }
+        _uiState.update {
+            it.copy(
+                navigateToLogin = false,
+                isRegistered = false
+            )
+        }
     }
 }

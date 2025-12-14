@@ -36,7 +36,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medinotify.R
 import com.example.medinotify.ui.screens.auth.components.AuthTextField
 import com.example.medinotify.ui.screens.auth.components.GoogleButton
@@ -45,6 +44,7 @@ import com.example.medinotify.ui.theme.MedinotifyTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import org.koin.androidx.compose.koinViewModel // ✅ FIX: Sửa lỗi DI bằng cách dùng koinViewModel
 
 @Composable
 fun LoginRoute(
@@ -53,7 +53,8 @@ fun LoginRoute(
     onContinue: () -> Unit,
     onBack: () -> Unit,
     onForgotPassword: () -> Unit = {},
-    viewModel: LoginViewModel = viewModel()
+    // ✅ FIX: Sử dụng koinViewModel() để Koin có thể inject dependencies
+    viewModel: LoginViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -90,6 +91,7 @@ fun LoginRoute(
         }
     }
 
+    // Xử lý điều hướng khi đăng nhập thành công
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
@@ -129,6 +131,7 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
 
+    // Hiển thị Toast khi có lỗi
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
@@ -195,6 +198,7 @@ fun LoginScreen(
                 isPasswordVisible = state.isPasswordVisible,
                 onPasswordToggle = onTogglePasswordVisibility
             )
+            // Hiển thị lỗi ngay dưới trường nhập liệu (nếu có)
             state.errorMessage?.let { error ->
                 Text(
                     text = error,
@@ -301,5 +305,3 @@ private fun LoginPreview() {
         )
     }
 }
-
-

@@ -4,18 +4,25 @@ import com.example.medinotify.data.domain.Schedule
 import com.example.medinotify.data.model.ScheduleEntity
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException // ✅ Import cần thiết cho parsing
 
 /**
- * Ánh xạ từ ScheduleEntity (dữ liệu thô từ Room, dùng String)
- * sang Schedule (lớp Domain cho logic và UI, dùng LocalTime).
+ * Ánh xạ từ ScheduleEntity (dữ liệu thô từ Room)
+ * sang Schedule (lớp Domain cho logic và UI).
  */
-// Lớp domain Schedule không còn chứa medicineName và medicineDosage.
 fun ScheduleEntity.toDomainModel(): Schedule {
+
+    // NOTE: Vì Domain Model và Entity đều sử dụng String cho giờ (specificTimeStr),
+    // chúng ta không cần chuyển đổi phức tạp ở đây nữa.
+    // Nếu bạn muốn giữ lại LocalTime trong Domain/UI, bạn sẽ phải tạo thêm một thuộc tính LocalTime
+    // trong Domain Model và tính toán ở đây.
+
     return Schedule(
         scheduleId = this.scheduleId,
         medicineId = this.medicineId,
 
-        specificTime = LocalTime.parse(this.specificTime, DateTimeFormatter.ofPattern("HH:mm")),
+        // ✅ FIX: SỬ DỤNG specificTimeStr (Giả định Entity đã đổi tên)
+        specificTimeStr = this.specificTimeStr,
 
         nextScheduledTimestamp = this.nextScheduledTimestamp,
         reminderStatus = this.reminderStatus
@@ -23,16 +30,17 @@ fun ScheduleEntity.toDomainModel(): Schedule {
 }
 
 /**
- * Ánh xạ một đối tượng Schedule (lớp domain, dùng LocalTime)
- * sang một đối tượng ScheduleEntity để lưu vào cơ sở dữ liệu (dùng String).
+ * Ánh xạ một đối tượng Schedule (lớp domain)
+ * sang một đối tượng ScheduleEntity để lưu vào cơ sở dữ liệu.
  */
 fun Schedule.toEntity(userId: String): ScheduleEntity {
     return ScheduleEntity(
         scheduleId = this.scheduleId,
-        userId = userId, // Giữ nguyên việc truyền userId
+        userId = userId,
         medicineId = this.medicineId,
 
-        specificTime = this.specificTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+        // ✅ FIX: SỬ DỤNG specificTimeStr (Giả định Domain Model đã đổi tên)
+        specificTimeStr = this.specificTimeStr,
 
         nextScheduledTimestamp = this.nextScheduledTimestamp,
         reminderStatus = this.reminderStatus

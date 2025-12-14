@@ -80,7 +80,7 @@ fun MedicineCalendarCard(item: ScheduleWithMedicine) {
                 color = Color(0xFF2C60FF),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                val timeString = item.schedule.specificTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+                val timeString = item.schedule.specificTimeStr.format(DateTimeFormatter.ofPattern("HH:mm"))
                 Text(
                     text = timeString,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),

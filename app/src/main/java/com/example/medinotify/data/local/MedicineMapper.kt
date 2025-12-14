@@ -1,23 +1,21 @@
 package com.example.medinotify.data.local
 
-// ✅ SỬA LỖI 1: Xóa dòng import sai gây ra lỗi "Argument type mismatch"
-// import androidx.compose.ui.input.key.type // <--- XÓA DÒNG NÀY
-
-import androidx.compose.ui.input.key.type
 import com.example.medinotify.data.domain.Medicine
-
-// ✅ SỬA LỖI 2: Sửa lại đường dẫn import để trỏ đến đúng file Entity đã được cập nhật.
-// Giả sử file Entity của bạn nằm trong package 'com.example.medinotify.data.local.model'.
-// Hãy điều chỉnh lại cho đúng với cấu trúc dự án của bạn nếu cần.
+import com.example.medinotify.data.model.Frequency
 import com.example.medinotify.data.model.MedicineEntity
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Chuyển đổi từ MedicineEntity (dữ liệu thô từ Room)
  * sang Medicine (lớp Domain cho logic và UI).
  */
 fun MedicineEntity.toDomainModel(): Medicine {
-    // Lỗi Unresolved reference 'type' và 'quantity' sẽ biến mất
-    // vì chúng ta đã import đúng file Entity chứa các thuộc tính này.
+    // 1. Chuyển đổi Long Timestamp từ Entity thành LocalDate (sử dụng cục bộ)
+    val localDate = Instant.ofEpochMilli(this.startDateTimestamp)
+        .atZone(ZoneId.systemDefault()).toLocalDate()
+
     return Medicine(
         medicineId = this.medicineId,
         name = this.name,
@@ -25,7 +23,15 @@ fun MedicineEntity.toDomainModel(): Medicine {
         type = this.type,
         quantity = this.quantity,
         notes = this.notes,
-        isActive = this.isActive
+        isActive = this.isActive,
+
+        // ✅ FIX: SỬ DỤNG startDateTimestamp: Long trong Domain Model
+        // Domain Model (Medicine.kt) phải được định nghĩa với startDateTimestamp
+        startDateTimestamp = this.startDateTimestamp,
+
+        // ✅ ÁNH XẠ CÁC TRƯỜNG TẦN SUẤT
+        frequencyType = Frequency.valueOf(this.frequencyType),
+        scheduleValue = this.scheduleValue,
     )
 }
 
@@ -34,6 +40,11 @@ fun MedicineEntity.toDomainModel(): Medicine {
  * sang một đối tượng MedicineEntity để lưu vào cơ sở dữ liệu.
  */
 fun Medicine.toEntity(userId: String): MedicineEntity {
+
+    // 2. Lấy Long Timestamp trực tiếp từ Domain Model
+    // Không cần chuyển đổi vì Domain Model đã lưu dưới dạng Long
+    val startDateTimestamp = this.startDateTimestamp // ✅ FIX: Tham chiếu đến thuộc tính Long mới
+
     return MedicineEntity(
         medicineId = this.medicineId,
         userId = userId,
@@ -42,7 +53,11 @@ fun Medicine.toEntity(userId: String): MedicineEntity {
         type = this.type,
         quantity = this.quantity,
         notes = this.notes,
-        isActive = this.isActive
+        isActive = this.isActive,
+
+        // ✅ ÁNH XẠ CÁC TRƯỜNG TẦN SUẤT
+        frequencyType = this.frequencyType.name,
+        scheduleValue = this.scheduleValue,
+        startDateTimestamp = startDateTimestamp, // ✅ FIX: Gán Long
     )
 }
-

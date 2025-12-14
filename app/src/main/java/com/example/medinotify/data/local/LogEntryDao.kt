@@ -10,35 +10,22 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface LogEntryDao {
 
+    // ✅ FIX LỖI: Thêm hàm insertAll để hỗ trợ đồng bộ dữ liệu
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(logEntries: List<LogEntryEntity>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLogEntry(logEntry: LogEntryEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertLogEntries(logEntries: List<LogEntryEntity>)
-
-    @Query("""
-        SELECT * FROM log_entries 
-        WHERE userId = :userId AND intakeTime BETWEEN :dateStart AND :dateEnd 
-        ORDER BY intakeTime DESC
-    """)
+    // Lấy log entry trong một khoảng thời gian
+    @Query("SELECT * FROM log_entries WHERE userId = :userId AND intakeTime BETWEEN :dateStart AND :dateEnd ORDER BY intakeTime DESC")
     fun getLogEntriesByDateRange(userId: String, dateStart: Long, dateEnd: Long): Flow<List<LogEntryEntity>>
 
-    @Query("SELECT * FROM log_entries WHERE medicineId = :medicineId AND userId = :userId ORDER BY intakeTime DESC")
-    fun getLogHistoryForMedicine(medicineId: String, userId: String): Flow<List<LogEntryEntity>>
-
-    @Query("""
-        UPDATE log_entries 
-        SET status = :newStatus, intakeTime = :intakeTime 
-        WHERE logId = :logId
-    """)
-    suspend fun updateLogStatus(logId: String, newStatus: String, intakeTime: Long)
-
+    // Xóa log entry của một loại thuốc (khi thuốc bị xóa)
     @Query("DELETE FROM log_entries WHERE medicineId = :medicineId AND userId = :userId")
     suspend fun deleteLogsForMedicine(medicineId: String, userId: String)
 
-    /**
-     * ✨✨✨ HÀM CÒN THIẾU: Xóa sạch bảng Log ✨✨✨
-     */
+    // ✅ HÀM CẦN THIẾT: Xóa tất cả log entry (cần cho logout/sync)
     @Query("DELETE FROM log_entries")
     suspend fun clearAllLogs()
 }

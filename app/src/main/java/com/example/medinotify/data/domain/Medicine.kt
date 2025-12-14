@@ -1,21 +1,33 @@
 package com.example.medinotify.data.domain
 
+import com.example.medinotify.data.model.Frequency
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.UUID
+import kotlin.jvm.JvmOverloads
 
-data class Medicine(
-    // ✅ SỬA 1: Cung cấp giá trị mặc định và đổi tên thuộc tính cho nhất quán
+data class Medicine @JvmOverloads constructor(
+    // ID nên là val, nhưng nếu bạn cần reset nó (không nên), hãy dùng var.
+    // Tạm thời giữ val, nhưng cần có constructor không tham số cho Firestore.
+    // @JvmOverloads ở đây giúp tạo constructor không tham số.
     val medicineId: String = UUID.randomUUID().toString(),
 
-    val name: String,
-    val dosage: String,      // Liều lượng, ví dụ: "500mg"
+    // ✅ FIX: Chuyển sang var để Firestore có thể set giá trị
+    var name: String = "",
+    var dosage: String = "",
+    var type: String = "",
+    var quantity: Int = 0,
 
-    // ✅ SỬA 2: Bổ sung các thuộc tính quan trọng còn thiếu
-    val type: String,        // Dạng thuốc: "Viên", "Nước", "Gói", v.v.
-    val quantity: Int,       // Số lượng thuốc còn lại
+    var frequencyType: Frequency = Frequency.DAILY,
+    var scheduleValue: String? = null,
 
-    // ✅ SỬA 3: Loại bỏ các thuộc tính của Schedule
-    // `timesPerDay` và `specificTimes` đã được xóa khỏi đây.
+    // ✅ FIX: Chuyển sang var
+    var startDateTimestamp: Long = LocalDate.now()
+        .atStartOfDay(ZoneId.systemDefault())
+        .toInstant()
+        .toEpochMilli(),
 
-    val notes: String,       // Ghi chú thêm về thuốc (ví dụ: "Uống sau khi ăn")
-    val isActive: Boolean    // Trạng thái của thuốc (có đang trong lịch trình uống hay không)
+    var notes: String = "",
+    var isActive: Boolean = false // ✅ FIX: Chuyển sang var để khắc phục lỗi setter
 )

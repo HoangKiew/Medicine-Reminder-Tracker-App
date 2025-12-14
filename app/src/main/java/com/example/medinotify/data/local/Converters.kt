@@ -1,63 +1,33 @@
 package com.example.medinotify.data.local
 
 import androidx.room.TypeConverter
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.util.Date
+import com.example.medinotify.data.model.Frequency
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.time.DayOfWeek
+// Loại bỏ các imports java.time không cần thiết
+// import java.time.Instant
+// import java.time.LocalDate
+// import java.time.LocalTime
+// import java.time.ZoneId
+// import java.time.format.DateTimeFormatter
+// import java.util.Date
 
 
 class Converters {
 
-    // ================== HỖ TRỢ KIỂU CŨ (java.util.Date) ==================
+    // ❌ XÓA: Loại bỏ các Converter cho java.util.Date (Không cần thiết)
+    // ❌ XÓA: Loại bỏ các Converter cho LocalTime <-> String (Entity đã dùng String)
+    // ❌ XÓA: Loại bỏ các Converter cho LocalDate <-> Long (Entity đã dùng Long)
+
+    // ================== ✨ HỖ TRỢ KIỂU TẦN SUẤT (Frequency & DayOfWeek) ==================
+
+    // --- Frequency <-> String ---
     @TypeConverter
-    fun fromTimestamp(value: Long?): Date? {
-        return value?.let { Date(it) }
-    }
-
-    @TypeConverter
-    fun dateToTimestamp(date: Date?): Long? {
-        return date?.time
-    }
-
-    // ================== ✨ HỖ TRỢ KIỂU MỚI (java.time) ==================
-
-    // 🔴 SỬA QUAN TRỌNG: Đổi từ ISO_LOCAL_TIME sang pattern "HH:mm"
-    // Điều này giúp khớp chính xác với chuỗi giờ bạn lưu trong ScheduleEntity
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-
-    private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-
-    // --- LocalTime <-> String ---
-    @TypeConverter
-    fun fromTimeString(value: String?): LocalTime? {
+    fun fromFrequencyString(value: String?): Frequency? {
         return value?.let {
             try {
-                // Ưu tiên parse theo định dạng ngắn HH:mm
-                LocalTime.parse(it, timeFormatter)
-            } catch (e: Exception) {
-                try {
-                    // Fallback: Nếu dữ liệu cũ có giây (HH:mm:ss), thử parse kiểu mặc định
-                    LocalTime.parse(it)
-                } catch (ex: Exception) {
-                    null
-                }
-            }
-        }
-    }
-
-    @TypeConverter
-    fun localTimeToString(date: LocalTime?): String? {
-        // Luôn lưu vào DB dưới dạng HH:mm (bỏ giây)
-        return date?.format(timeFormatter)
-    }
-
-    // --- LocalDate <-> String ---
-    @TypeConverter
-    fun fromDateString(value: String?): LocalDate? {
-        return value?.let {
-            try {
-                LocalDate.parse(it, dateFormatter)
+                Frequency.valueOf(it)
             } catch (e: Exception) {
                 null
             }
@@ -65,7 +35,21 @@ class Converters {
     }
 
     @TypeConverter
-    fun localDateToString(date: LocalDate?): String? {
-        return date?.format(dateFormatter)
+    fun frequencyToString(frequency: Frequency?): String? {
+        return frequency?.name
+    }
+
+    // --- List<DayOfWeek> <-> String JSON (Cần cho SPECIFIC_DAYS trong MedicineEntity.scheduleValue) ---
+    @TypeConverter
+    fun fromDayOfWeekList(value: String?): List<DayOfWeek>? {
+        return value?.let {
+            val listType = object : TypeToken<List<DayOfWeek>>() {}.type
+            Gson().fromJson(it, listType)
+        }
+    }
+
+    @TypeConverter
+    fun dayOfWeekListToString(list: List<DayOfWeek>?): String? {
+        return Gson().toJson(list)
     }
 }

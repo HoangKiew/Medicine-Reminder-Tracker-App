@@ -15,7 +15,7 @@ import com.example.medinotify.data.model.LogEntryEntity
         ScheduleEntity::class,
         LogEntryEntity::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 // ✨✨✨ THÊM DÒNG NÀY ĐỂ KẾT NỐI VỚI FILE CONVERTERS.KT ✨✨✨

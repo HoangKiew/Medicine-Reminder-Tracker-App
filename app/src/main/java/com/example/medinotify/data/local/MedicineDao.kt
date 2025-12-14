@@ -1,47 +1,37 @@
 package com.example.medinotify.data.local
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update // ✅ Đã thêm import này
-import com.example.medinotify.data.model.MedicineEntity // (Giữ nguyên import của bạn)
-// Nếu Entity của bạn nằm ở package khác (vd: data.local.entity), hãy sửa lại dòng trên
+import androidx.room.Update
+import com.example.medinotify.data.model.MedicineEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MedicineDao {
-    // ================== CÁC HÀM THÊM (CREATE) ==================
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMedicine(medicine: MedicineEntity)
 
+    // ✅ HÀM CẦN THIẾT: Cho quá trình đồng bộ (Sync)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMedicines(medicines: List<MedicineEntity>)
 
-    // ================== CÁC HÀM ĐỌC (READ) ==================
-
-    @Query("SELECT * FROM medicines WHERE userId = :userId ORDER BY name ASC")
-    fun getAllMedicines(userId: String): Flow<List<MedicineEntity>>
-
-    @Query("SELECT * FROM medicines WHERE medicineId = :medicineId")
-    suspend fun getMedicineById(medicineId: String): MedicineEntity?
-
-    // ================== CÁC HÀM CẬP NHẬT (UPDATE) ==================
-
-    // ✨✨✨ ĐÂY LÀ HÀM BẠN ĐANG THIẾU ✨✨✨
     @Update
     suspend fun updateMedicine(medicine: MedicineEntity)
 
-    // ================== CÁC HÀM XÓA (DELETE) ==================
+    @Query("SELECT * FROM medicines WHERE userId = :userId")
+    fun getAllMedicines(userId: String): Flow<List<MedicineEntity>>
 
-    @Delete
-    suspend fun deleteMedicine(medicine: MedicineEntity)
+    // ✅ HÀM CẦN THIẾT: Lấy Entity theo ID (để dùng trong logic đồng bộ LogEntry)
+    @Query("SELECT * FROM medicines WHERE medicineId = :medicineId")
+    suspend fun getMedicineById(medicineId: String): MedicineEntity?
 
     @Query("DELETE FROM medicines WHERE medicineId = :medicineId")
     suspend fun deleteMedicineById(medicineId: String)
 
+    // ✅ HÀM CẦN THIẾT: Xóa tất cả (cho logout/sync)
     @Query("DELETE FROM medicines")
     suspend fun clearAllMedicines()
 }

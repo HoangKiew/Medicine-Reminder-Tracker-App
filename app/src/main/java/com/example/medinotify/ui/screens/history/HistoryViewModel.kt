@@ -7,6 +7,7 @@ import com.example.medinotify.data.domain.Medicine
 import com.example.medinotify.data.repository.MedicineRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -45,6 +46,7 @@ class HistoryViewModel(
     private val logEntriesForSelectedDate: Flow<List<LogEntry>> =
         _selectedDate.flatMapLatest { date ->
             if (userId == null) {
+                // Sử dụng Flow để trả về ngay danh sách rỗng nếu không có user
                 return@flatMapLatest flowOf(emptyList())
             }
 
@@ -60,7 +62,9 @@ class HistoryViewModel(
     private val mappedHistoryUi: Flow<List<MedicineHistoryUi>> = logEntriesForSelectedDate
         .transformLatest { logList ->
             // Lấy danh sách thuốc 1 lần duy nhất để tối ưu
+            // Lưu ý: .first() là suspend function, nên nó phải nằm trong body của transformLatest
             val medicineMap = repository.getAllMedicines().first().associateBy { it.medicineId }
+
             val mappedList = logList.mapNotNull { logEntry ->
                 mapLogEntryToUi(logEntry, medicineMap[logEntry.medicineId])
             }
@@ -93,13 +97,12 @@ class HistoryViewModel(
 
     /**
      * Hàm Ánh xạ LogEntry sang UI Model.
-     * Hàm này không cần 'suspend' nữa vì thông tin Medicine đã được cung cấp.
      */
     private fun mapLogEntryToUi(logEntry: LogEntry, medicine: Medicine?): MedicineHistoryUi? {
         if (medicine == null) return null
 
-        // ✅ SỬA 1: Sử dụng thuộc tính 'intakeTime' đúng từ lớp LogEntry mới
-        val timeString = Instant.ofEpochMilli(logEntry.intakeTime)
+        // ✅ FIX: Sử dụng thuộc tính 'intakeTimestamp' (tên trường mới)
+        val timeString = Instant.ofEpochMilli(logEntry.intakeTimestamp)
             .atZone(ZoneId.systemDefault())
             .toLocalTime()
             .format(DateTimeFormatter.ofPattern("HH:mm"))
@@ -109,7 +112,7 @@ class HistoryViewModel(
             name = medicine.name,
             dosage = medicine.dosage,
             time = timeString,
-            // ✅ SỬA 2: Sử dụng hằng số để kiểm tra trạng thái
+            // Sử dụng hằng số để kiểm tra trạng thái
             isTaken = logEntry.status == LogStatus.TAKEN
         )
     }

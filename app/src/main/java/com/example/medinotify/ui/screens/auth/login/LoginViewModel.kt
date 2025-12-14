@@ -1,11 +1,13 @@
 package com.example.medinotify.ui.screens.auth.login
 
+import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medinotify.data.auth.AuthRepository
 import com.example.medinotify.data.auth.AuthResult
-import com.example.medinotify.data.auth.FirebaseAuthRepository
+// ✅ IMPORT MedicineRepository
+import com.example.medinotify.data.repository.MedicineRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -21,7 +23,10 @@ data class LoginUiState(
 )
 
 class LoginViewModel(
-    private val authRepository: AuthRepository = FirebaseAuthRepository()
+    // ✅ FIX LỖI: Chỉ nhận dependency (Koin sẽ cung cấp)
+    private val authRepository: AuthRepository,
+    // ✅ FIX LỖI: Thêm MedicineRepository để gọi sync data
+    private val medicineRepository: MedicineRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -58,7 +63,16 @@ class LoginViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             when (val result = authRepository.signIn(email, password)) {
-                is AuthResult.Success -> _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                is AuthResult.Success -> {
+                    try {
+                        // ✅ KÍCH HOẠT ĐỒNG BỘ: Tải dữ liệu về sau khi đăng nhập thành công
+                        medicineRepository.syncDataFromFirebase()
+                        _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                    } catch (e: Exception) {
+                        Log.e("LoginVM", "Failed to sync data after sign-in: ${e.message}")
+                        _uiState.update { it.copy(isLoading = false, errorMessage = "Đăng nhập thành công, nhưng không thể tải dữ liệu mới.") }
+                    }
+                }
                 is AuthResult.Error -> _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
             }
         }
@@ -72,7 +86,16 @@ class LoginViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             when (val result = authRepository.signInWithGoogle(idToken)) {
-                is AuthResult.Success -> _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                is AuthResult.Success -> {
+                    try {
+                        // ✅ KÍCH HOẠT ĐỒNG BỘ: Tải dữ liệu về sau khi đăng nhập Google thành công
+                        medicineRepository.syncDataFromFirebase()
+                        _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                    } catch (e: Exception) {
+                        Log.e("LoginVM", "Failed to sync data after Google sign-in: ${e.message}")
+                        _uiState.update { it.copy(isLoading = false, errorMessage = "Đăng nhập thành công, nhưng không thể tải dữ liệu mới.") }
+                    }
+                }
                 is AuthResult.Error -> _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
             }
         }
@@ -86,5 +109,3 @@ class LoginViewModel(
         _uiState.update { it.copy(isLoading = false, errorMessage = message) }
     }
 }
-
-

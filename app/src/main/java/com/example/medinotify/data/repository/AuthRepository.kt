@@ -4,10 +4,11 @@ import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.auth.FirebaseAuthUserCollisionException // ✅ Thêm import lỗi trùng email
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseUser // ✅ Import FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.UserProfileChangeRequest // ✅ Thêm import để cập nhật tên
-import com.google.firebase.firestore.FirebaseFirestore // ✅ Thêm import Firestore
+import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 sealed interface AuthResult {
@@ -18,13 +19,15 @@ sealed interface AuthResult {
 interface AuthRepository {
     suspend fun signIn(email: String, password: String): AuthResult
     suspend fun signInWithGoogle(idToken: String): AuthResult
-    // ✨ THÊM HÀM ĐĂNG KÝ
     suspend fun signUp(email: String, pass: String, name: String): AuthResult
+
+    // ✅ THÊM HÀM UTILITY: Cần cho ProfileViewModel và SplashViewModel
+    fun getCurrentUser(): FirebaseUser?
+    fun signOut()
 }
 
 class FirebaseAuthRepository(
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
-    // ✨ Thêm Firestore để lưu thông tin User (Tên, Email) vào DB
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) : AuthRepository {
 
@@ -49,7 +52,7 @@ class FirebaseAuthRepository(
             val credential = GoogleAuthProvider.getCredential(idToken, null)
             val result = firebaseAuth.signInWithCredential(credential).await()
             val userId = result.user?.uid.orEmpty()
-            AuthResult.Success(userId)
+            AuthResult.Success(userId) // ✅ Đã sửa để trả về userId
         } catch (exception: FirebaseNetworkException) {
             AuthResult.Error("Không thể kết nối tới máy chủ. Vui lòng thử lại sau.")
         } catch (exception: Exception) {
@@ -57,22 +60,19 @@ class FirebaseAuthRepository(
         }
     }
 
-    // ✨✨✨ HÀM ĐĂNG KÝ MỚI ✨✨✨
     override suspend fun signUp(email: String, pass: String, name: String): AuthResult {
         return try {
-            // 1. Tạo tài khoản trên Firebase Auth
             val result = firebaseAuth.createUserWithEmailAndPassword(email, pass).await()
             val user = result.user
 
-            // 2. Cập nhật tên hiển thị (DisplayName) và lưu vào Firestore
             user?.let {
-                // Cập nhật Profile Auth (để hiện tên khi login bằng Google/Email)
+                // Cập nhật Profile Auth (DisplayName)
                 val profileUpdates = UserProfileChangeRequest.Builder()
                     .setDisplayName(name)
                     .build()
                 it.updateProfile(profileUpdates).await()
 
-                // Lưu thông tin user vào Firestore (quan trọng để quản lý dữ liệu sau này)
+                // Lưu thông tin user vào Firestore
                 val userMap = hashMapOf(
                     "uid" to it.uid,
                     "email" to email,
@@ -81,10 +81,9 @@ class FirebaseAuthRepository(
                 firestore.collection("users").document(it.uid).set(userMap).await()
             }
 
-            // 3. 🔴 QUAN TRỌNG: Đăng xuất ngay lập tức
-            // Lý do: Firebase tự động login sau khi đăng ký.
-            // Ta logout để bắt người dùng phải đăng nhập lại ở màn hình Login.
-            firebaseAuth.signOut()
+            // Ghi chú: Nếu bạn muốn người dùng phải đăng nhập lại, giữ dòng này.
+            // Nếu bạn muốn chuyển thẳng sang màn hình Home sau đăng ký, hãy xóa nó.
+            // firebaseAuth.signOut()
 
             AuthResult.Success(user?.uid ?: "")
         } catch (e: FirebaseAuthUserCollisionException) {
@@ -94,5 +93,15 @@ class FirebaseAuthRepository(
         } catch (e: Exception) {
             AuthResult.Error(e.message ?: "Đăng ký thất bại.")
         }
+    }
+
+    // ✅ THÊM IMPLEMENTATION: Cần cho ProfileViewModel
+    override fun signOut() {
+        firebaseAuth.signOut()
+    }
+
+    // ✅ THÊM IMPLEMENTATION: Cần cho ProfileViewModel và SplashViewModel
+    override fun getCurrentUser(): FirebaseUser? {
+        return firebaseAuth.currentUser
     }
 }
