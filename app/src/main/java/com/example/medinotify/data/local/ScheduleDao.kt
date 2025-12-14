@@ -6,7 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.medinotify.data.model.ScheduleEntity
 import kotlinx.coroutines.flow.Flow
-import java.time.LocalTime // Giữ lại import LocalTime nếu cần cho Converter
+import java.time.LocalTime
 
 @Dao
 interface ScheduleDao {
@@ -17,6 +17,9 @@ interface ScheduleDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSchedules(schedules: List<ScheduleEntity>)
 
+    /**
+     * Lấy tất cả lịch trình của người dùng hiện tại. (Đã có bộ lọc userId)
+     */
     @Query("SELECT * FROM schedules WHERE userId = :userId")
     fun getAllSchedules(userId: String): Flow<List<ScheduleEntity>>
 
@@ -29,7 +32,10 @@ interface ScheduleDao {
     @Query("SELECT * FROM schedules WHERE userId = :userId AND nextScheduledTimestamp BETWEEN :dateStart AND :dateEnd ORDER BY nextScheduledTimestamp ASC")
     fun getSchedulesByDateRange(userId: String, dateStart: Long, dateEnd: Long): Flow<List<ScheduleEntity>>
 
-    // ✅ FIX: Cập nhật hàm để nhận String (timeString "HH:mm") và truy vấn cột specificTimeStr
-    @Query("UPDATE schedules SET reminderStatus = :status WHERE medicineId = :medicineId AND specificTimeStr = :timeString")
-    suspend fun updateScheduleStatus(medicineId: String, timeString: String, status: Boolean)
+    // ✅ FIX: THÊM BỘ LỌC userId để tránh rò rỉ dữ liệu khi cập nhật.
+    /**
+     * Cập nhật trạng thái 'Đã uống' cho một lịch trình cụ thể của người dùng.
+     */
+    @Query("UPDATE schedules SET reminderStatus = :status WHERE medicineId = :medicineId AND specificTimeStr = :timeString AND userId = :userId")
+    suspend fun updateScheduleStatus(medicineId: String, timeString: String, status: Boolean, userId: String) // <-- Thêm tham số userId
 }
