@@ -7,12 +7,12 @@ import com.example.medinotify.data.local.AppDatabase
 import com.example.medinotify.data.repository.MedicineRepository
 import com.example.medinotify.ui.screens.addmedicine.AddMedicineViewModel
 import com.example.medinotify.ui.screens.addmedicine.StartViewModel
-import com.example.medinotify.ui.screens.auth.login.LoginViewModel // Cần sửa
-import com.example.medinotify.ui.screens.auth.register.RegisterViewModel // Cần sửa
+import com.example.medinotify.ui.screens.auth.login.LoginViewModel
+import com.example.medinotify.ui.screens.auth.register.RegisterViewModel
 import com.example.medinotify.ui.screens.calendar.CalendarViewModel
 import com.example.medinotify.ui.screens.history.HistoryViewModel
 import com.example.medinotify.ui.screens.home.HomeViewModel
-import com.example.medinotify.ui.screens.profile.ProfileViewModel // Cần sửa
+import com.example.medinotify.ui.screens.profile.ProfileViewModel
 import com.example.medinotify.ui.screens.reminder.MedicineReminderViewModel
 import com.example.medinotify.ui.screens.settings.SettingsViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -23,7 +23,7 @@ import org.koin.dsl.module
 
 val appModule = module {
 
-    // --- CUNG CẤP CÁC SINGLETON (Giữ nguyên) ---
+    // --- CUNG CẤP CÁC SINGLETON ---
     single { FirebaseAuth.getInstance() }
     single { FirebaseFirestore.getInstance() }
     single<AuthRepository> {
@@ -45,38 +45,53 @@ val appModule = module {
     single { WorkManager.getInstance(androidContext()) }
 
 
-    // --- CUNG CẤP CÁC VIEWMODELS (ĐÃ SỬA LỖI DEPENDENCY) ---
+    // --- CUNG CẤP CÁC VIEWMODELS ---
 
-    // 1. LoginViewModel: Cần Auth + MedicineRepo để sync data
+    // 1. LoginViewModel
     viewModel {
         LoginViewModel(
             authRepository = get(),
-            medicineRepository = get() // ✅ ĐÃ THÊM: Cần MedicineRepo để gọi syncData
-        )
-    }
-
-    // 2. RegisterViewModel: Cần Auth + MedicineRepo để sync data sau khi đăng ký
-    viewModel {
-        RegisterViewModel(
-            authRepository = get(),
-            medicineRepository = get() // ✅ ĐÃ THÊM: Cần MedicineRepo để gọi syncData
-        )
-    }
-
-    // 3. ProfileViewModel: Cần Auth + MedicineRepo để signOut và clearLocalData
-    viewModel {
-        ProfileViewModel(
-            authRepository = get(), // ✅ ĐÃ THÊM: Cần AuthRepo để signOut
             medicineRepository = get()
         )
     }
 
-    // Các ViewModel khác (Giữ nguyên, cần Repository đã được cung cấp)
-    viewModel { AddMedicineViewModel(repository = get(), workManager = get(), savedStateHandle = get()) }
+    // 2. RegisterViewModel
+    viewModel {
+        RegisterViewModel(
+            authRepository = get(),
+            medicineRepository = get()
+        )
+    }
+
+    // 3. ProfileViewModel
+    viewModel {
+        ProfileViewModel(
+            authRepository = get(),
+            medicineRepository = get()
+        )
+    }
+
+    // 4. AddMedicineViewModel
+    viewModel {
+        AddMedicineViewModel(
+            repository = get(),
+            workManager = get(),
+            savedStateHandle = get()
+        )
+    }
+
     viewModel { HomeViewModel(repository = get()) }
     viewModel { CalendarViewModel(repository = get()) }
     viewModel { HistoryViewModel(repository = get()) }
     viewModel { StartViewModel(repository = get()) }
-    viewModel { MedicineReminderViewModel(repository = get()) }
+
+    //  WorkManager
+    viewModel {
+        MedicineReminderViewModel(
+            repository = get(),
+            workManager = get()
+        )
+    }
+
     viewModel { SettingsViewModel(repository = get()) }
 }

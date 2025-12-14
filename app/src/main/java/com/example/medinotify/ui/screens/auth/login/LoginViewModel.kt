@@ -23,9 +23,7 @@ data class LoginUiState(
 )
 
 class LoginViewModel(
-    // ✅ FIX LỖI: Chỉ nhận dependency (Koin sẽ cung cấp)
     private val authRepository: AuthRepository,
-    // ✅ FIX LỖI: Thêm MedicineRepository để gọi sync data
     private val medicineRepository: MedicineRepository
 ) : ViewModel() {
 
