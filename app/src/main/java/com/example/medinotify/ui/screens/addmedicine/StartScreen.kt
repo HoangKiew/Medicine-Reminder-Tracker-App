@@ -26,7 +26,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun StartScreen(
-    navController: NavController, // ✅ THÊM: Nhận NavController để điều hướng
+    navController: NavController,
     onStart: () -> Unit,
     viewModel: StartViewModel = koinViewModel()
 ) {
@@ -51,7 +51,7 @@ fun StartScreen(
                 tint = Color(0xFFFF5A5A),
                 modifier = Modifier
                     .size(28.dp)
-                    .clickable { // ✅ Thêm sự kiện click
+                    .clickable {
                         navController.navigate(NavDestination.Calendar.route)
                     }
             )
@@ -64,7 +64,7 @@ fun StartScreen(
                     tint = Color(0xFF355CFF),
                     modifier = Modifier
                         .size(28.dp)
-                        .clickable { // ✅ Thêm sự kiện click
+                        .clickable {
                             navController.navigate(NavDestination.Profile.route)
                         }
                 )
@@ -77,7 +77,7 @@ fun StartScreen(
                     tint = Color.DarkGray,
                     modifier = Modifier
                         .size(28.dp)
-                        .clickable { // ✅ Thêm sự kiện click
+                        .clickable {
                             navController.navigate(NavDestination.Settings.route)
                         }
                 )

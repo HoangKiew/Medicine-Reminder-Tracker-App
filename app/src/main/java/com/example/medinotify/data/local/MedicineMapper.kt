@@ -25,11 +25,9 @@ fun MedicineEntity.toDomainModel(): Medicine {
         notes = this.notes,
         isActive = this.isActive,
 
-        // ✅ FIX: SỬ DỤNG startDateTimestamp: Long trong Domain Model
         // Domain Model (Medicine.kt) phải được định nghĩa với startDateTimestamp
         startDateTimestamp = this.startDateTimestamp,
 
-        // ✅ ÁNH XẠ CÁC TRƯỜNG TẦN SUẤT
         frequencyType = Frequency.valueOf(this.frequencyType),
         scheduleValue = this.scheduleValue,
     )
@@ -42,8 +40,7 @@ fun MedicineEntity.toDomainModel(): Medicine {
 fun Medicine.toEntity(userId: String): MedicineEntity {
 
     // 2. Lấy Long Timestamp trực tiếp từ Domain Model
-    // Không cần chuyển đổi vì Domain Model đã lưu dưới dạng Long
-    val startDateTimestamp = this.startDateTimestamp // ✅ FIX: Tham chiếu đến thuộc tính Long mới
+    val startDateTimestamp = this.startDateTimestamp
 
     return MedicineEntity(
         medicineId = this.medicineId,
@@ -55,9 +52,8 @@ fun Medicine.toEntity(userId: String): MedicineEntity {
         notes = this.notes,
         isActive = this.isActive,
 
-        // ✅ ÁNH XẠ CÁC TRƯỜNG TẦN SUẤT
         frequencyType = this.frequencyType.name,
         scheduleValue = this.scheduleValue,
-        startDateTimestamp = startDateTimestamp, // ✅ FIX: Gán Long
+        startDateTimestamp = startDateTimestamp,
     )
 }

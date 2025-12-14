@@ -14,7 +14,6 @@ interface MedicineDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMedicine(medicine: MedicineEntity)
 
-    // HÀM CẦN THIẾT: Cho quá trình đồng bộ (Sync)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMedicines(medicines: List<MedicineEntity>)
 
@@ -22,12 +21,11 @@ interface MedicineDao {
     suspend fun updateMedicine(medicine: MedicineEntity)
 
     /**
-     * Lấy tất cả thuốc của người dùng hiện tại. Đã có bộ lọc userId.
+     * Lấy tất cả thuốc của người dùng hiện tại.
      */
     @Query("SELECT * FROM medicines WHERE userId = :userId")
     fun getAllMedicines(userId: String): Flow<List<MedicineEntity>>
 
-    // ✅ FIX: THÊM BỘ LỌC userId để tránh rò rỉ dữ liệu khi truy vấn.
     /**
      * Lấy Entity theo ID thuốc và ID người dùng.
      */

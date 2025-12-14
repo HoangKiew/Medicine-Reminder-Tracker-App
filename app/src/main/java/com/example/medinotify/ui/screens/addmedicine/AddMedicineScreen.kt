@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
@@ -28,24 +29,22 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.medinotify.data.model.Frequency
 import com.example.medinotify.data.model.WeekDay
-import com.example.medinotify.ui.navigation.NavDestination
 import org.koin.androidx.compose.koinViewModel
+import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import androidx.compose.material.icons.Icons
 import java.util.*
-import java.time.DayOfWeek
+
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AddMedicineScreen(
     navController: NavController,
     viewModel: AddMedicineViewModel = koinViewModel()
 ) {
-    // ================== HELPER & STATES CẦN THIẾT ==================
+    // ================== HELPER & STATES ==================
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
-    // ✅ FIX: Đọc State từ StateFlow
     val state by viewModel.uiState.collectAsState()
     val uiMessage by rememberUpdatedState(state.uiMessage)
 
@@ -69,22 +68,20 @@ fun AddMedicineScreen(
     )
 
     val types = listOf("Viên nén", "Viên nang", "Xi-rô", "Thuốc nước")
-    val frequencies = remember { Frequency.entries } // Dùng entries()
+    val frequencies = remember { Frequency.entries }
 
-    // --- Xử lý Toast và Điều hướng ---
+    // ================== EFFECTS ==================
     LaunchedEffect(uiMessage) {
         uiMessage?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            // Chỉ điều hướng khi có thông báo thành công từ ViewModel
             if (message.contains("Lưu thành công")) {
-                navController.popBackStack() // Quay lại màn hình trước
+                navController.popBackStack()
             }
             viewModel.clearUiMessage()
         }
     }
 
-
-    // ================== UI ==================
+    // ================== UI CONTENT ==================
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -96,12 +93,11 @@ fun AddMedicineScreen(
                 .padding(horizontal = 18.dp, vertical = 8.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-
-            // HEADER
+            // --- HEADER ---
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = null,
                         tint = mainPink
                     )
@@ -116,7 +112,9 @@ fun AddMedicineScreen(
                 )
                 Spacer(Modifier.width(48.dp))
             }
+
             Spacer(Modifier.height(10.dp))
+
             Text(
                 text = "Điền vào các ô và nhấn nút Lưu để thêm!",
                 color = mainPink,
@@ -124,30 +122,42 @@ fun AddMedicineScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(Modifier.height(20.dp))
 
-            // CÁC TRƯỜNG NHẬP LIỆU
+            // --- INPUT FIELDS ---
             OutlinedTextField(
-                value = state.name, // ✅ SỬA: Dùng state.name
+                value = state.name,
                 onValueChange = viewModel::onNameChange,
-                label = { Row { Text("Tên thuốc"); if (state.name.isEmpty()) Text(" *", color = Color.Red) } },
+                label = {
+                    Row {
+                        Text("Tên thuốc")
+                        if (state.name.isEmpty()) Text(" *", color = Color.Red)
+                    }
+                },
                 placeholder = { Text("Ví dụ: Paracetamol", color = placeholderGray) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = transparentColors
             )
+
             Spacer(Modifier.height(15.dp))
 
-            // Dropdown Loại thuốc (Type)
+            // Dropdown: Medicine Type
             var expandedType by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = expandedType,
                 onExpandedChange = { expandedType = !expandedType }
             ) {
                 OutlinedTextField(
-                    value = state.medicineType, // ✅ SỬA: Dùng state.medicineType
+                    value = state.medicineType,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Row { Text("Loại thuốc"); if (state.medicineType == "Chọn dạng thuốc") Text(" *", color = Color.Red) } },
+                    label = {
+                        Row {
+                            Text("Loại thuốc")
+                            if (state.medicineType == "Chọn dạng thuốc") Text(" *", color = Color.Red)
+                        }
+                    },
                     placeholder = { Text("Chọn dạng thuốc", color = placeholderGray) },
                     trailingIcon = { Icon(Icons.Filled.ArrowDropDown, null, tint = mainPink) },
                     modifier = Modifier
@@ -170,20 +180,34 @@ fun AddMedicineScreen(
                     }
                 }
             }
+
             Spacer(Modifier.height(15.dp))
+
             OutlinedTextField(
-                value = state.dosage, // ✅ SỬA: Dùng state.dosage
+                value = state.dosage,
                 onValueChange = viewModel::onDosageChange,
-                label = { Row { Text("Liều lượng"); if (state.dosage.isEmpty()) Text(" *", color = Color.Red) } },
+                label = {
+                    Row {
+                        Text("Liều lượng")
+                        if (state.dosage.isEmpty()) Text(" *", color = Color.Red)
+                    }
+                },
                 placeholder = { Text("Ví dụ: 500mg", color = placeholderGray) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = transparentColors
             )
+
             Spacer(Modifier.height(15.dp))
+
             OutlinedTextField(
-                value = state.quantity, // ✅ SỬA: Dùng state.quantity
+                value = state.quantity,
                 onValueChange = viewModel::onQuantityChange,
-                label = { Row { Text("Số lượng"); if (state.quantity.isEmpty()) Text(" *", color = Color.Red) } },
+                label = {
+                    Row {
+                        Text("Số lượng")
+                        if (state.quantity.isEmpty()) Text(" *", color = Color.Red)
+                    }
+                },
                 placeholder = { Text("Ví dụ: 10", color = placeholderGray) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -192,15 +216,24 @@ fun AddMedicineScreen(
 
             Spacer(Modifier.height(25.dp))
 
-            // MỤC CHỌN TẦN SUẤT
-            Text("Tần suất", color = blueTitle, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            // --- FREQUENCY SECTION ---
+            Text(
+                text = "Tần suất",
+                color = blueTitle,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+
             Spacer(Modifier.height(12.dp))
 
-            // Dropdown Tần suất (Frequency)
+            // Dropdown: Frequency
             var freqExpanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(expanded = freqExpanded, onExpandedChange = { freqExpanded = !freqExpanded }) {
+            ExposedDropdownMenuBox(
+                expanded = freqExpanded,
+                onExpandedChange = { freqExpanded = !freqExpanded }
+            ) {
                 OutlinedTextField(
-                    value = state.frequencyType.displayText, // ✅ SỬA: Dùng state.frequencyType
+                    value = state.frequencyType.displayText,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Chế độ lặp lại") },
@@ -210,42 +243,52 @@ fun AddMedicineScreen(
                         .fillMaxWidth(),
                     colors = transparentColors
                 )
-                ExposedDropdownMenu(expanded = freqExpanded, onDismissRequest = { freqExpanded = false }) {
+                ExposedDropdownMenu(
+                    expanded = freqExpanded,
+                    onDismissRequest = { freqExpanded = false }
+                ) {
                     frequencies.forEach { freq ->
                         DropdownMenuItem(
                             text = { Text(freq.displayText) },
                             onClick = {
-                                viewModel.onFrequencyTypeChange(freq) // ✅ SỬA: Dùng hàm mới
+                                viewModel.onFrequencyTypeChange(freq)
                                 freqExpanded = false
                             }
                         )
                     }
                 }
             }
+
             Spacer(Modifier.height(12.dp))
 
-            // HIỂN THỊ CÁC TÙY CHỌN TƯƠNG ỨNG VỚI TẦN SUẤT
-            when (state.frequencyType) { // ✅ SỬA: Dùng state.frequencyType
-                // CHỌN NGÀY CỤ THỂ TRONG TUẦN
+            // Frequency Options
+            when (state.frequencyType) {
                 Frequency.SPECIFIC_DAYS -> {
-                    Text("Chọn các ngày trong tuần:", fontSize = 14.sp, color = Color.DarkGray)
+                    Text(
+                        text = "Chọn các ngày trong tuần:",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray
+                    )
                     Spacer(Modifier.height(8.dp))
-                    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         WeekDay.entries.forEach { day ->
                             DayChip(
                                 day = day,
-                                isSelected = state.selectedDays.contains(day.javaDayOfWeek), // ✅ SỬA: Dùng state.selectedDays
-                                onDaySelected = viewModel::toggleDaySelection // ✅ SỬA: Dùng hàm mới (nhận DayOfWeek)
+                                isSelected = state.selectedDays.contains(day.javaDayOfWeek),
+                                onDaySelected = viewModel::toggleDaySelection
                             )
                         }
                     }
                     Spacer(Modifier.height(15.dp))
                 }
-                // CHỌN KHOẢNG CÁCH NGÀY
+
                 Frequency.INTERVAL -> {
                     OutlinedTextField(
-                        value = state.intervalDays, // ✅ SỬA: Dùng state.intervalDays
-                        onValueChange = viewModel::onIntervalDaysChange, // ✅ SỬA: Dùng hàm mới
+                        value = state.intervalDays,
+                        onValueChange = viewModel::onIntervalDaysChange,
                         label = { Text("Uống mỗi (ngày)") },
                         placeholder = { Text("2") },
                         modifier = Modifier.fillMaxWidth(),
@@ -255,28 +298,27 @@ fun AddMedicineScreen(
                     )
                     Spacer(Modifier.height(15.dp))
                 }
-                Frequency.DAILY -> { /* Không cần hiển thị gì thêm cho chế độ hàng ngày */ }
+
+                Frequency.DAILY -> { /* No additional UI */ }
             }
 
-            // ❌ XÓA KHUNG CHỌN NGÀY BẮT ĐẦU/KẾT THÚC (Theo yêu cầu)
-            /*
-            Spacer(Modifier.height(25.dp))
-            Text("Thời gian sử dụng", color = blueTitle, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(12.dp))
-            // ... (Logic DateSelectorField đã bị xóa)
-            */
-
-
             Spacer(Modifier.height(25.dp))
 
-            // PHẦN LỜI NHẮC
-            Text("Lời nhắc nhở", color = mainPink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            // --- REMINDER SECTION ---
+            Text(
+                text = "Lời nhắc nhở",
+                color = mainPink,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold
+            )
+
             Spacer(Modifier.height(12.dp))
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Bật báo thức", color = Color.Gray)
                 Spacer(Modifier.weight(1f))
                 Switch(
-                    checked = state.enableReminder, // ✅ SỬA: Dùng state.enableReminder
+                    checked = state.enableReminder,
                     onCheckedChange = viewModel::onEnableReminderChange,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = mainPink,
@@ -284,10 +326,16 @@ fun AddMedicineScreen(
                     )
                 )
             }
+
             Spacer(Modifier.height(18.dp))
-            if (state.enableReminder) { // ✅ SỬA: Dùng state.enableReminder
+
+            if (state.enableReminder) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Giờ uống (${state.specificTimes.size} lần):", color = blueTitle, fontSize = 16.sp) // ✅ SỬA: Dùng state.specificTimes
+                    Text(
+                        text = "Giờ uống (${state.specificTimes.size} lần):",
+                        color = blueTitle,
+                        fontSize = 16.sp
+                    )
                     Spacer(Modifier.weight(1f))
                     Button(onClick = {
                         TimePickerDialog(
@@ -301,25 +349,33 @@ fun AddMedicineScreen(
                         Text("Thêm giờ")
                     }
                 }
+
                 Spacer(Modifier.height(12.dp))
+
                 FlowRow(Modifier.fillMaxWidth()) {
-                    state.specificTimes.forEach { time -> // ✅ SỬA: Dùng state.specificTimes
-                        TimeChip(time = time, onRemove = viewModel::removeSpecificTime, mainColor = mainPink)
+                    state.specificTimes.forEach { time ->
+                        TimeChip(
+                            time = time,
+                            onRemove = viewModel::removeSpecificTime,
+                            mainColor = mainPink
+                        )
                     }
-                    if (state.specificTimes.isEmpty()) { // ✅ SỬA: Dùng state.specificTimes
-                        Text("Chưa có giờ nhắc nhở.", color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
+                    if (state.specificTimes.isEmpty()) {
+                        Text(
+                            text = "Chưa có giờ nhắc nhở.",
+                            color = Color.Gray,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
             }
 
             Spacer(Modifier.height(30.dp))
 
-            // NÚT LƯU
+            // --- SAVE BUTTON ---
             Button(
-                // ✅ FIX: Gọi hàm saveMedicine và truyền callback đóng màn hình
                 onClick = {
                     viewModel.saveMedicine {
-                        // Logic điều hướng sau khi lưu thành công
                         navController.popBackStack()
                     }
                 },
@@ -328,19 +384,26 @@ fun AddMedicineScreen(
                     .height(55.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(mainPink),
-                enabled = !state.isLoading // ✅ FIX: Thêm trạng thái loading
+                enabled = !state.isLoading
             ) {
-                Text(if (state.isLoading) "Đang lưu..." else "Lưu",
-                    color = Color.White, fontSize = 18.sp)
+                Text(
+                    text = if (state.isLoading) "Đang lưu..." else "Lưu",
+                    color = Color.White,
+                    fontSize = 18.sp
+                )
             }
+
             Spacer(Modifier.height(40.dp))
         }
     }
 }
 
-// ✅ SỬA: DayChip để sử dụng DayOfWeek (cho ViewModel)
 @Composable
-fun DayChip(day: WeekDay, isSelected: Boolean, onDaySelected: (DayOfWeek) -> Unit) {
+fun DayChip(
+    day: WeekDay,
+    isSelected: Boolean,
+    onDaySelected: (DayOfWeek) -> Unit
+) {
     val mainPink = Color(0xFFFF6B6B)
     val selectedColor = mainPink
     val unselectedColor = Color.LightGray
@@ -354,7 +417,7 @@ fun DayChip(day: WeekDay, isSelected: Boolean, onDaySelected: (DayOfWeek) -> Uni
             .padding(vertical = 4.dp)
             .background(backgroundColor, shape = CircleShape)
             .border(1.dp, borderColor, CircleShape)
-            .clickable { onDaySelected(day.javaDayOfWeek) } // ✅ FIX: Truyền DayOfWeek
+            .clickable { onDaySelected(day.javaDayOfWeek) }
             .padding(horizontal = 2.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -368,7 +431,11 @@ fun DayChip(day: WeekDay, isSelected: Boolean, onDaySelected: (DayOfWeek) -> Uni
 }
 
 @Composable
-fun TimeChip(time: LocalTime, onRemove: (LocalTime) -> Unit, mainColor: Color) {
+fun TimeChip(
+    time: LocalTime,
+    onRemove: (LocalTime) -> Unit,
+    mainColor: Color
+) {
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = mainColor.copy(alpha = 0.1f),
@@ -378,9 +445,13 @@ fun TimeChip(time: LocalTime, onRemove: (LocalTime) -> Unit, mainColor: Color) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
         ) {
-            Text(time.format(DateTimeFormatter.ofPattern("HH:mm")), fontSize = 14.sp, color = mainColor)
+            Text(
+                text = time.format(DateTimeFormatter.ofPattern("HH:mm")),
+                fontSize = 14.sp,
+                color = mainColor
+            )
             Icon(
-                Icons.Default.Close,
+                imageVector = Icons.Default.Close,
                 contentDescription = "Xóa giờ",
                 modifier = Modifier
                     .padding(start = 4.dp)

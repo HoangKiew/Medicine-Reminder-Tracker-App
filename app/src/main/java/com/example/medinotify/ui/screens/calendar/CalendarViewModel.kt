@@ -33,7 +33,7 @@ class CalendarViewModel(
             combine(allSchedulesFlow, medicinesFlow) { allSchedules, allMedicines ->
                 val medicineMap = allMedicines.associateBy { it.medicineId }
 
-                // ✅ BƯỚC MỚI: Tạo Map để đếm số lần uống cho mỗi thuốc
+                //Tạo Map để đếm số lần uống cho mỗi thuốc
                 val dosesPerDayMap = allSchedules
                     .groupBy { it.medicineId }
                     .mapValues { it.value.size }
@@ -46,11 +46,11 @@ class CalendarViewModel(
 
                     val dosesPerDay = dosesPerDayMap[medicine.medicineId] ?: 0
 
-                    // ✅ FIX 1: Truyền dosesPerDay vào CalendarLogic
+                    //Truyền dosesPerDay vào CalendarLogic
                     val isScheduledToday = CalendarLogic.isScheduledForDate(
                         date = selectedDate,
                         medicine = medicine,
-                        dosesPerDay = dosesPerDay // <-- Đã thêm tham số
+                        dosesPerDay = dosesPerDay //
                     )
 
                     if (isScheduledToday) {
@@ -76,13 +76,11 @@ class CalendarViewModel(
         .distinctUntilChanged()
         .flatMapLatest { yearMonth ->
 
-            // ✅ BƯỚC MỚI: Lấy cả Schedules để tính dosesPerDay
             val allSchedulesFlow = repository.getAllSchedules()
             val allMedicinesFlow = repository.getAllMedicines()
 
             combine(allSchedulesFlow, allMedicinesFlow) { allSchedules, allMedicines ->
 
-                // ✅ BƯỚC MỚI: Tính dosesPerDayMap từ Schedules
                 val dosesPerDayMap = allSchedules
                     .groupBy { it.medicineId }
                     .mapValues { it.value.size }
@@ -92,19 +90,16 @@ class CalendarViewModel(
                 val monthStart = yearMonth.atDay(1)
                 val monthEnd = yearMonth.atEndOfMonth()
 
-                // Lặp qua TẤT CẢ các ngày trong tháng đang xem
                 var currentDate = monthStart
                 while (currentDate.isBefore(monthEnd.plusDays(1))) {
 
                     var hasScheduleOnThisDay = false
 
-                    // Lặp qua TẤT CẢ các thuốc đang hoạt động
                     for (medicine in allMedicines) {
                         if (!medicine.isActive) continue
 
                         val dosesPerDay = dosesPerDayMap[medicine.medicineId] ?: 0
 
-                        // ✅ FIX 2: Truyền dosesPerDay vào CalendarLogic
                         if (CalendarLogic.isScheduledForDate(
                                 currentDate,
                                 medicine,

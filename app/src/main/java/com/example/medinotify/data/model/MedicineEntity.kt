@@ -16,9 +16,7 @@ data class MedicineEntity(
     val type: String,
     val quantity: Int,
 
-    // ==========================================================
-    // ✅ THÊM CÁC CỘT LỊCH TRÌNH MỚI CHO ROOM
-    // ==========================================================
+
 
     // Tần suất uống (DAILY, SPECIFIC_DAYS, INTERVAL)
     // Lưu dưới dạng String (tên của Enum Frequency)

@@ -15,13 +15,6 @@ data class AddMedicineUiState(
     val medicineType: String = "Chọn dạng thuốc",
     val dosage: String = "",
     val quantity: String = "",
-    // *******************************************************************
-    // GIẢ SỬ AddMedicineUiState CÓ CÁC FIELD SAU
-    // *******************************************************************
-
-    // ==========================================================
-    // ✅ TRƯỜNG LỊCH TRÌNH
-    // ==========================================================
 
     // 1. Loại Tần suất (Hàng ngày, Cụ thể, Cách ngày)
     val frequencyType: Frequency = Frequency.DAILY,
@@ -36,10 +29,8 @@ data class AddMedicineUiState(
     val startDate: LocalDate = LocalDate.now(),
 
     // 5. Các giờ nhắc nhở cụ thể trong ngày
-    // ✅ FIX: Phải là Set<LocalTime> để nhất quán với logic của ViewModel
     val specificTimes: Set<LocalTime> = emptySet(),
 
-    // ==========================================================
 
     // --- Trạng thái UI/Hành vi ---
     val enableReminder: Boolean = false,

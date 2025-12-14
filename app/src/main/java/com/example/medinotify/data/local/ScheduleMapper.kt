@@ -39,7 +39,6 @@ fun Schedule.toEntity(userId: String): ScheduleEntity {
         userId = userId,
         medicineId = this.medicineId,
 
-        // ✅ FIX: SỬ DỤNG specificTimeStr (Giả định Domain Model đã đổi tên)
         specificTimeStr = this.specificTimeStr,
 
         nextScheduledTimestamp = this.nextScheduledTimestamp,

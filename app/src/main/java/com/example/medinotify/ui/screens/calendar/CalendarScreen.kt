@@ -28,9 +28,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
 
-// =========================================================================
-// I. CÁC HÀM COMPOSABLE PHỤ
-// =========================================================================
 
 @Composable
 fun MedicineCalendarCard(item: ScheduleWithMedicine) {
@@ -176,9 +173,6 @@ fun CalendarGrid(
 }
 
 
-// =========================================================================
-// II. HÀM COMPOSABLE CHÍNH
-// =========================================================================
 
 @Composable
 fun CalendarScreen(
@@ -201,7 +195,6 @@ fun CalendarScreen(
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
     ) {
-        // ================== TOP BAR (ĐÃ SỬA) ==================
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -210,7 +203,6 @@ fun CalendarScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 📅 1. Icon Lịch (Hiện tại đang ở trang Lịch nên có thể không cần navigate, nhưng để cho đồng bộ)
             Icon(
                 Icons.Filled.DateRange,
                 contentDescription = "Calendar",
@@ -218,7 +210,6 @@ fun CalendarScreen(
                 modifier = Modifier
                     .size(28.dp)
                     .clickable {
-                        // Nếu muốn reload lại trang lịch hoặc chỉ đơn giản là hiện icon
                         navController.navigate(NavDestination.Calendar.route) {
                             launchSingleTop = true
                         }
@@ -254,7 +245,7 @@ fun CalendarScreen(
             }
         }
 
-        // ... Phần còn lại giữ nguyên ...
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()

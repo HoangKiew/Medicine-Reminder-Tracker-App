@@ -39,7 +39,6 @@ fun MedicineReminderScreen(
     dayOfWeek: String = "Hôm nay",
     onBack: () -> Unit = { navController.popBackStack() }
 ) {
-    // ✅ Lấy Context để hiện Toast thông báo
     val context = LocalContext.current
 
     Column(

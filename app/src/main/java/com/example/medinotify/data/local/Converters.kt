@@ -16,13 +16,6 @@ import java.time.DayOfWeek
 
 class Converters {
 
-    // ❌ XÓA: Loại bỏ các Converter cho java.util.Date (Không cần thiết)
-    // ❌ XÓA: Loại bỏ các Converter cho LocalTime <-> String (Entity đã dùng String)
-    // ❌ XÓA: Loại bỏ các Converter cho LocalDate <-> Long (Entity đã dùng Long)
-
-    // ================== ✨ HỖ TRỢ KIỂU TẦN SUẤT (Frequency & DayOfWeek) ==================
-
-    // --- Frequency <-> String ---
     @TypeConverter
     fun fromFrequencyString(value: String?): Frequency? {
         return value?.let {
@@ -39,7 +32,6 @@ class Converters {
         return frequency?.name
     }
 
-    // --- List<DayOfWeek> <-> String JSON (Cần cho SPECIFIC_DAYS trong MedicineEntity.scheduleValue) ---
     @TypeConverter
     fun fromDayOfWeekList(value: String?): List<DayOfWeek>? {
         return value?.let {

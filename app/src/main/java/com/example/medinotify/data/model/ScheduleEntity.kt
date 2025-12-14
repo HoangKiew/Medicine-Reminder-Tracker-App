@@ -25,8 +25,7 @@ data class ScheduleEntity(
 
     val medicineId: String,
 
-    // ✅ FIX: Đổi tên cột để khớp với Domain Model (đã sửa cho Firebase)
-    val specificTimeStr: String, // Định dạng "HH:mm"
+    val specificTimeStr: String,
 
     val nextScheduledTimestamp: Long,
     val reminderStatus: Boolean

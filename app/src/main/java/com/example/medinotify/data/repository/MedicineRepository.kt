@@ -50,10 +50,9 @@ class MedicineRepository(
         }
     }
 
-    // ✅ FIX 1: Thêm userId vào hàm DAO để đảm bảo chỉ truy vấn thuốc của người dùng hiện tại
     suspend fun getMedicineById(medicineId: String): Medicine? {
         val currentUserId = userId ?: return null
-        return medicineDao.getMedicineById(medicineId, currentUserId)?.toDomainModel() // <-- Truyền userId
+        return medicineDao.getMedicineById(medicineId, currentUserId)?.toDomainModel()
     }
 
     fun getAllSchedules(): Flow<List<Schedule>> {
@@ -85,7 +84,7 @@ class MedicineRepository(
                 scheduleDao.clearAllSchedules()
                 medicineDao.clearAllMedicines()
                 logEntryDao.clearAllLogs()
-                Log.d("Repository", "✅ Đã dọn sạch dữ liệu cũ trong máy")
+                Log.d("Repository", " Đã dọn sạch dữ liệu cũ trong máy")
             } catch (e: Exception) {
                 Log.e("Repository", "Lỗi khi dọn dữ liệu: ${e.message}")
                 e.printStackTrace()

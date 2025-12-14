@@ -32,7 +32,6 @@ interface ScheduleDao {
     @Query("SELECT * FROM schedules WHERE userId = :userId AND nextScheduledTimestamp BETWEEN :dateStart AND :dateEnd ORDER BY nextScheduledTimestamp ASC")
     fun getSchedulesByDateRange(userId: String, dateStart: Long, dateEnd: Long): Flow<List<ScheduleEntity>>
 
-    // ✅ FIX: THÊM BỘ LỌC userId để tránh rò rỉ dữ liệu khi cập nhật.
     /**
      * Cập nhật trạng thái 'Đã uống' cho một lịch trình cụ thể của người dùng.
      */

@@ -21,7 +21,6 @@ interface AuthRepository {
     suspend fun signInWithGoogle(idToken: String): AuthResult
     suspend fun signUp(email: String, pass: String, name: String): AuthResult
 
-    // ✅ THÊM HÀM UTILITY: Cần cho ProfileViewModel và SplashViewModel
     fun getCurrentUser(): FirebaseUser?
     fun signOut()
 }
@@ -52,7 +51,7 @@ class FirebaseAuthRepository(
             val credential = GoogleAuthProvider.getCredential(idToken, null)
             val result = firebaseAuth.signInWithCredential(credential).await()
             val userId = result.user?.uid.orEmpty()
-            AuthResult.Success(userId) // ✅ Đã sửa để trả về userId
+            AuthResult.Success(userId)
         } catch (exception: FirebaseNetworkException) {
             AuthResult.Error("Không thể kết nối tới máy chủ. Vui lòng thử lại sau.")
         } catch (exception: Exception) {
@@ -81,9 +80,6 @@ class FirebaseAuthRepository(
                 firestore.collection("users").document(it.uid).set(userMap).await()
             }
 
-            // Ghi chú: Nếu bạn muốn người dùng phải đăng nhập lại, giữ dòng này.
-            // Nếu bạn muốn chuyển thẳng sang màn hình Home sau đăng ký, hãy xóa nó.
-            // firebaseAuth.signOut()
 
             AuthResult.Success(user?.uid ?: "")
         } catch (e: FirebaseAuthUserCollisionException) {
@@ -95,12 +91,10 @@ class FirebaseAuthRepository(
         }
     }
 
-    // ✅ THÊM IMPLEMENTATION: Cần cho ProfileViewModel
     override fun signOut() {
         firebaseAuth.signOut()
     }
 
-    // ✅ THÊM IMPLEMENTATION: Cần cho ProfileViewModel và SplashViewModel
     override fun getCurrentUser(): FirebaseUser? {
         return firebaseAuth.currentUser
     }

@@ -40,7 +40,7 @@ class AddMedicineViewModel(
     ))
     val uiState: StateFlow<AddMedicineUiState> = _uiState.asStateFlow()
 
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm") // Định dạng giờ chuẩn
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     init {
         uiState.value.medicineId?.let { loadMedicineData(it) }
@@ -85,14 +85,13 @@ class AddMedicineViewModel(
         }
     }
 
-    // ✅ FIX LỖI: Chuyển List đã sắp xếp trở lại thành Set
     fun addSpecificTime(time: LocalTime) {
         if (!_uiState.value.specificTimes.contains(time)) {
             _uiState.update {
                 it.copy(
                     specificTimes = (it.specificTimes + time)
-                        .sorted() // -> List
-                        .toSet()    // <- Chuyển List về Set
+                        .sorted()
+                        .toSet()
                 )
             }
         } else {
@@ -100,7 +99,7 @@ class AddMedicineViewModel(
         }
     }
 
-    // ✅ FIX LỖI: Đảm bảo kết quả là Set (nếu cần sắp xếp sau khi xóa)
+    //  Đảm bảo kết quả là Set
     fun removeSpecificTime(time: LocalTime) {
         _uiState.update {
             it.copy(
@@ -113,7 +112,6 @@ class AddMedicineViewModel(
     fun clearUiMessage() { _uiState.update { it.copy(uiMessage = null) } }
 
 
-    // --- HÀM TẢI DỮ LIỆU CŨ (KHI SỬA) ---
     private fun loadMedicineData(id: String) {
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
@@ -156,7 +154,7 @@ class AddMedicineViewModel(
                         frequencyType = medicine.frequencyType,
                         selectedDays = daysOfWeekSet,
                         intervalDays = intervalString,
-                        specificTimes = loadedSpecificTimes, // ✅ Đã load giờ nhắc nhở
+                        specificTimes = loadedSpecificTimes,
 
                         uiMessage = if (medicine.isActive) "Đang chỉnh sửa: Vui lòng xác nhận lại giờ nhắc nhở." else null,
                         isLoading = false

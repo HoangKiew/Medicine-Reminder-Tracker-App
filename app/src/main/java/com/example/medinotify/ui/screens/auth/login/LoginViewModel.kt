@@ -63,7 +63,7 @@ class LoginViewModel(
             when (val result = authRepository.signIn(email, password)) {
                 is AuthResult.Success -> {
                     try {
-                        // ✅ KÍCH HOẠT ĐỒNG BỘ: Tải dữ liệu về sau khi đăng nhập thành công
+                        //KÍCH HOẠT ĐỒNG BỘ: Tải dữ liệu về sau khi đăng nhập thành công
                         medicineRepository.syncDataFromFirebase()
                         _uiState.update { it.copy(isLoading = false, isSuccess = true) }
                     } catch (e: Exception) {

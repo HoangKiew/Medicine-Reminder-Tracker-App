@@ -53,7 +53,6 @@ fun LoginRoute(
     onContinue: () -> Unit,
     onBack: () -> Unit,
     onForgotPassword: () -> Unit = {},
-    // ✅ FIX: Sử dụng koinViewModel() để Koin có thể inject dependencies
     viewModel: LoginViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

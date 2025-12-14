@@ -180,7 +180,6 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         )
     }
 
-    // ✨✨✨ SỬA ĐỔI ĐỂ HỖ TRỢ CHỈNH SỬA THUỐC ✨✨✨
     composable(
         // Route cần khớp với định nghĩa trong NavDestination: "add_medicine?medicineId={medicineId}"
         route = NavDestination.AddMedicine.route,
