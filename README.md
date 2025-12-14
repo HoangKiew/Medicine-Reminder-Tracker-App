@@ -53,6 +53,43 @@ Dự án áp dụng kiến trúc hiện đại và các thư viện mới nhất
 * **Kiều Trần Thu Uyên** - 064305005016
 * **Hoàng Mai Kiều** - 067305001315
 * **Lương Thị Ánh Tuyết** - 067305001563
+# 🚀 Cài Đặt và Chạy Thử
 
+**Để build và chạy thử dự án, bạn cần thực hiện các bước sau:**
+
+**_- Yêu cầu:_**
+
+- Android Studio Iguana | 2023.2.1 hoặc mới hơn.
+- JDK 17.
+
+**Các bước cài đặt:**
+
+***1.Clone Repository:***
+
+- git clone https://github.com/HoangKiew/Medicine-Reminder-Tracker-App.git
+- cd Medicine-Reminder-Tracker-App
+
+***2.Kết nối với Firebase:***
+
+- Truy cập Firebase Console.
+- Tạo một dự án Firebase mới.
+- Thêm một ứng dụng Android vào dự án Firebase (Hãy kiểm tra package name trong file `app/build.gradle.kts` để nhập chính xác).
+- *Lưu ý:* Để sử dụng đăng nhập Google, bạn cần thêm mã SHA-1 (lấy bằng lệnh `gradlew signingReport`) vào cấu hình dự án trên Console.
+- Tải về file `google-services.json` và đặt nó vào thư mục `app/`.
+- Trong Firebase Console, kích hoạt các dịch vụ sau:
+  - Authentication: Bật phương thức đăng nhập bằng Email/Password và Google.
+  - Firestore Database: Tạo một database ở chế độ production (hoặc test mode).
+  - Storage: (Nếu cần) Tạo một bucket lưu trữ.
+
+***3.Build Dự Án:***
+
+- Mở dự án bằng Android Studio.
+- Android Studio sẽ tự động đồng bộ Gradle. Quá trình này có thể mất vài phút.
+- Nếu gặp lỗi `org.gradle.java.home`, hãy vào File -> Settings -> Build, Execution, Deployment -> Build Tools -> Gradle và chọn một Gradle JDK là jbr-17 hoặc Embedded JDK 17.
+
+***4.Chạy Ứng Dụng:***
+
+- Kết nối một thiết bị Android thật hoặc khởi động một máy ảo (Emulator).
+- Nhấn nút Run 'app' (▶️) trên thanh công cụ của Android Studio.
 ---
 *Đồ án thực tế - Viện CNTT - Trường ĐH Giao Thông Vận Tải TP.HCM (UTH)*
