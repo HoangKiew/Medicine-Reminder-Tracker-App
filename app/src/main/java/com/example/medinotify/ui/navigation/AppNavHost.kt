@@ -141,7 +141,7 @@ private fun androidx.navigation.NavGraphBuilder.authGraph(navController: NavHost
     }
 }
 
-// ==================== MAIN GRAPH ====================
+
 
 private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHostController) {
     // Home
@@ -181,17 +181,17 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
     }
 
     composable(
-        // Route cần khớp với định nghĩa trong NavDestination: "add_medicine?medicineId={medicineId}"
+
         route = NavDestination.AddMedicine.route,
         arguments = listOf(
             navArgument("medicineId") {
                 type = NavType.StringType
-                nullable = true   // Cho phép null (để hỗ trợ thêm mới)
+                nullable = true
                 defaultValue = null
             }
         )
     ) {
-        // ViewModel sẽ tự động lấy medicineId từ SavedStateHandle
+
         AddMedicineScreen(navController)
     }
 
@@ -219,7 +219,7 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(navController: NavHost
         HelpAndSupportScreen(navController = navController)
     }
 
-    // Màn hình Reminder nhận tham số từ Thông báo
+    // Màn hình Reminder
     composable(
         route = "reminder/{medicineId}/{medicineName}/{dosage}/{time}",
         arguments = listOf(

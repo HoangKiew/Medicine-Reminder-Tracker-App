@@ -52,7 +52,7 @@ class MedicineReminderWorker(
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Tạo Channel cho Android 8.0+
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
@@ -67,9 +67,7 @@ class MedicineReminderWorker(
 
         // --- CẤU HÌNH INTENT ĐỂ MỞ APP ---
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
-            // ✨ QUAN TRỌNG: Đã sửa dòng này
-            // FLAG_ACTIVITY_NEW_TASK: Bắt buộc khi gọi từ Worker
-            // FLAG_ACTIVITY_SINGLE_TOP: Nếu app đang mở, không kill app mà chỉ gọi onNewIntent
+
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
 
             putExtra("NAVIGATE_TO", "reminder_screen")
@@ -81,13 +79,13 @@ class MedicineReminderWorker(
 
         val pendingIntent = PendingIntent.getActivity(
             applicationContext,
-            id.hashCode(), // RequestCode khác nhau để không bị đè Intent
+            id.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.drawable.splash_screen) // Lưu ý: Nên đổi thành icon trong suốt nếu bị hiện ô vuông trắng
+            .setSmallIcon(R.drawable.splash_screen)
             .setContentTitle("Đến giờ uống thuốc: $name")
             .setContentText("$dosage. Nhấn để xác nhận đã uống.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

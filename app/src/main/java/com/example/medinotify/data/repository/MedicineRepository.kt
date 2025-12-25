@@ -34,10 +34,6 @@ class MedicineRepository(
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-    // =========================================================================
-    // I. CÁC HÀM ĐỌC DỮ LIỆU (READ OPERATIONS)
-    // =========================================================================
-
     fun getCurrentUser(): FirebaseUser? {
         return auth.currentUser
     }
@@ -74,9 +70,6 @@ class MedicineRepository(
         }
     }
 
-    // =========================================================================
-    // II. CÁC HÀM GHI DỮ LIỆU (WRITE OPERATIONS)
-    // =========================================================================
 
     suspend fun signOut() {
         withContext(Dispatchers.IO) {
@@ -95,7 +88,7 @@ class MedicineRepository(
 
     suspend fun addMedicine(medicine: Medicine, schedules: List<Schedule>) {
         val currentUserId = userId ?: throw IllegalStateException("User not logged in.")
-        //... (Logic ghi Firebase/Room không thay đổi)
+
         withContext(Dispatchers.IO) {
             val medicineRef = firestore.collection("users").document(currentUserId)
                 .collection("medicines").document(medicine.medicineId)
@@ -114,7 +107,7 @@ class MedicineRepository(
 
     suspend fun updateMedicine(medicine: Medicine, newSchedules: List<Schedule>) {
         val currentUserId = userId ?: throw IllegalStateException("User not logged in.")
-        //... (Logic cập nhật không thay đổi)
+
         withContext(Dispatchers.IO) {
             firestore.collection("users").document(currentUserId)
                 .collection("medicines").document(medicine.medicineId)
@@ -142,7 +135,7 @@ class MedicineRepository(
 
     suspend fun deleteMedicine(medicineId: String) {
         val currentUserId = userId ?: return
-        //... (Logic xóa không thay đổi)
+
         withContext(Dispatchers.IO) {
             try {
                 firestore.collection("users").document(currentUserId)
@@ -170,7 +163,6 @@ class MedicineRepository(
         val currentUserId = userId ?: throw IllegalStateException("User not logged in.")
 
         withContext(Dispatchers.IO) {
-            // ✅ FIX 2: Truyền userId vào getMedicineById() để lấy tên thuốc an toàn
             val medicine = getMedicineById(logEntry.medicineId)
             val medicineName = medicine?.name ?: "Unknown"
 
@@ -184,17 +176,13 @@ class MedicineRepository(
         }
     }
 
-    /**
-     * Cập nhật trạng thái reminderStatus của Schedule cả trên Room và Firebase.
-     */
+
     suspend fun updateScheduleStatus(medicineId: String, time: LocalTime, status: Boolean) {
         val currentUserId = userId ?: return
 
         withContext(Dispatchers.IO) {
             val timeString = time.format(timeFormatter)
 
-            // 1. Cập nhật Room
-            // ✅ FIX 3: Truyền userId vào DAO để chỉ cập nhật lịch trình của người dùng hiện tại
             scheduleDao.updateScheduleStatus(medicineId, timeString, status, currentUserId)
 
             // 2. Cập nhật Firebase
@@ -214,16 +202,14 @@ class MedicineRepository(
         }
     }
 
-    /**
-     * Đồng bộ hóa dữ liệu từ Firebase xuống Room (chạy khi đăng nhập).
-     */
+
     suspend fun syncDataFromFirebase() {
         val currentUserId = userId ?: return
         Log.d("Repository", "Starting sync for user: $currentUserId")
 
         withContext(Dispatchers.IO) {
             try {
-                // ... (Logic xóa dữ liệu cũ và đồng bộ Medicines/Schedules/Logs không thay đổi)
+
                 medicineDao.clearAllMedicines()
                 scheduleDao.clearAllSchedules()
                 logEntryDao.clearAllLogs()
@@ -256,7 +242,7 @@ class MedicineRepository(
                 }
 
                 val firestoreLogEntities = firestoreLogs.mapNotNull { logEntry ->
-                    // ✅ FIX 4: Truyền userId vào getMedicineById()
+
                     val medicineEntity = medicineDao.getMedicineById(logEntry.medicineId, currentUserId)
                     val medicineName = medicineEntity?.name ?: "Unknown Medicine"
                     logEntry.toEntity(currentUserId, medicineName)

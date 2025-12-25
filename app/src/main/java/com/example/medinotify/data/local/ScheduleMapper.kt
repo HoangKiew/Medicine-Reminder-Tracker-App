@@ -12,10 +12,7 @@ import java.time.format.DateTimeParseException // ✅ Import cần thiết cho p
  */
 fun ScheduleEntity.toDomainModel(): Schedule {
 
-    // NOTE: Vì Domain Model và Entity đều sử dụng String cho giờ (specificTimeStr),
-    // chúng ta không cần chuyển đổi phức tạp ở đây nữa.
-    // Nếu bạn muốn giữ lại LocalTime trong Domain/UI, bạn sẽ phải tạo thêm một thuộc tính LocalTime
-    // trong Domain Model và tính toán ở đây.
+
 
     return Schedule(
         scheduleId = this.scheduleId,

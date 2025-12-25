@@ -23,16 +23,24 @@ import org.koin.dsl.module
 
 val appModule = module {
 
-    // --- CUNG CẤP CÁC SINGLETON ---
     single { FirebaseAuth.getInstance() }
     single { FirebaseFirestore.getInstance() }
+
     single<AuthRepository> {
-        FirebaseAuthRepository(firebaseAuth = get(), firestore = get())
+        FirebaseAuthRepository(
+            firebaseAuth = get(),
+            firestore = get()
+        )
     }
+
     single { AppDatabase.getDatabase(context = androidContext()) }
+
+    // DAOs
     single { get<AppDatabase>().medicineDao() }
     single { get<AppDatabase>().scheduleDao() }
     single { get<AppDatabase>().logEntryDao() }
+
+    // Repository
     single {
         MedicineRepository(
             firestore = get(),
@@ -42,10 +50,11 @@ val appModule = module {
             logEntryDao = get()
         )
     }
+
+    // WorkManager
     single { WorkManager.getInstance(androidContext()) }
 
 
-    // --- CUNG CẤP CÁC VIEWMODELS ---
 
     // 1. LoginViewModel
     viewModel {
@@ -80,12 +89,7 @@ val appModule = module {
         )
     }
 
-    viewModel { HomeViewModel(repository = get()) }
-    viewModel { CalendarViewModel(repository = get()) }
-    viewModel { HistoryViewModel(repository = get()) }
-    viewModel { StartViewModel(repository = get()) }
-
-    //  WorkManager
+    // 5. MedicineReminderViewModel
     viewModel {
         MedicineReminderViewModel(
             repository = get(),
@@ -93,5 +97,10 @@ val appModule = module {
         )
     }
 
+    // Các ViewModel cơ bản khác
+    viewModel { HomeViewModel(repository = get()) }
+    viewModel { CalendarViewModel(repository = get()) }
+    viewModel { HistoryViewModel(repository = get()) }
+    viewModel { StartViewModel(repository = get()) }
     viewModel { SettingsViewModel(repository = get()) }
 }

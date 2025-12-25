@@ -2,15 +2,18 @@ package com.example.medinotify.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medinotify.data.domain.Medicine
+import com.example.medinotify.data.model.Frequency
 import com.example.medinotify.data.repository.MedicineRepository
-import com.example.medinotify.utils.CalendarLogic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
-// Data class cho UI State (Giữ nguyên)
 data class HomeUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val medicineSchedules: List<MedicineItem> = emptyList(),
@@ -36,46 +39,59 @@ class HomeViewModel(private val repository: MedicineRepository) : ViewModel() {
     }
         .flatMapLatest { selectedDate ->
 
-            // Lấy TẤT CẢ Schedules và Medicines
-            val allSchedulesFlow = repository.getAllSchedules()
-            val allMedicinesFlow = repository.getAllMedicines()
-
-            combine(allSchedulesFlow, allMedicinesFlow) { allSchedules, allMedicines ->
-
-                val medicineMap = allMedicines.associateBy { it.medicineId }
+            combine(repository.getAllSchedules(), repository.getAllMedicines()) { allSchedules, allMedicines ->
                 val medicineItems = mutableListOf<MedicineItem>()
 
-                // ✅ BƯỚC MỚI: Tạo Map để đếm số lần uống cho mỗi thuốc
-                val dosesPerDayMap = allSchedules
+
+                val medicineTimesMap = allSchedules
                     .groupBy { it.medicineId }
-                    .mapValues { it.value.size }
+                    .mapValues { entry -> entry.value.map { it.specificTimeStr }.toSet() }
 
-                for (schedule in allSchedules) {
-                    val medicine = medicineMap[schedule.medicineId]
+                // 2. Duyệt qua TẤT CẢ các thuốc (thay vì duyệt Schedule)
+                for (medicine in allMedicines) {
+                    if (!medicine.isActive) continue
 
-                    if (medicine == null || !medicine.isActive) continue
+                    // 3. Kiểm tra thuốc có lịch vào ngày 'selectedDate' không? (Quy tắc lặp)
+                    if (isMedicineScheduledForDate(selectedDate, medicine)) {
 
-                    val dosesPerDay = dosesPerDayMap[medicine.medicineId] ?: 0
+                        // Lấy các giờ uống của thuốc này
+                        val times = medicineTimesMap[medicine.medicineId] ?: emptySet()
 
-                    // SỬ DỤNG LOGIC LẶP LẠI (Frequency)
-                    // ✅ FIX 2: Truyền dosesPerDay vào CalendarLogic
-                    val isScheduledToday = CalendarLogic.isScheduledForDate(
-                        date = selectedDate,
-                        medicine = medicine,
-                        dosesPerDay = dosesPerDay // <-- Đã thêm tham số
-                    )
+                        for (timeStr in times) {
+                            // 4. Tìm xem đã có bản ghi trong DB chưa
+                            val existingSchedule = allSchedules.find { s ->
+                                val sDate = Instant.ofEpochMilli(s.nextScheduledTimestamp)
+                                    .atZone(ZoneId.systemDefault()).toLocalDate()
+                                s.medicineId == medicine.medicineId &&
+                                        s.specificTimeStr == timeStr &&
+                                        sDate == selectedDate
+                            }
 
-                    // Chỉ thêm vào danh sách nếu nó thực sự có lịch uống vào ngày này
-                    if (isScheduledToday) {
-                        medicineItems.add(
-                            MedicineItem(
-                                id = medicine.medicineId,
-                                name = medicine.name,
-                                description = medicine.dosage,
-                                time = schedule.specificTimeStr,
-                                isTaken = schedule.reminderStatus
-                            )
-                        )
+                            if (existingSchedule != null) {
+                                // A. ĐÃ CÓ TRONG DB (Lịch thực)
+                                medicineItems.add(
+                                    MedicineItem(
+                                        id = medicine.medicineId,
+                                        name = medicine.name,
+                                        description = medicine.dosage,
+                                        time = existingSchedule.specificTimeStr,
+                                        isTaken = existingSchedule.reminderStatus
+                                    )
+                                )
+                            } else {
+                                // B. CHƯA CÓ TRONG DB (Lịch ảo - Tương lai)
+                                // Hiển thị item mặc định là chưa uống
+                                medicineItems.add(
+                                    MedicineItem(
+                                        id = medicine.medicineId,
+                                        name = medicine.name,
+                                        description = medicine.dosage,
+                                        time = timeStr,
+                                        isTaken = false // Mặc định tương lai là chưa uống
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -103,7 +119,6 @@ class HomeViewModel(private val repository: MedicineRepository) : ViewModel() {
         _refreshTrigger.value += 1
     }
 
-    // --- HÀM XÓA THUỐC ---
     fun deleteMedicine(medicineId: String) {
         viewModelScope.launch {
             try {
@@ -111,6 +126,32 @@ class HomeViewModel(private val repository: MedicineRepository) : ViewModel() {
                 refreshData()
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    // --- HÀM KIỂM TRA QUY TẮC LẶP (Logic cốt lõi) ---
+    private fun isMedicineScheduledForDate(date: LocalDate, medicine: Medicine): Boolean {
+        // 1. Không hiện trước ngày bắt đầu
+        val startDate = Instant.ofEpochMilli(medicine.startDateTimestamp)
+            .atZone(ZoneId.systemDefault()).toLocalDate()
+        if (date.isBefore(startDate)) return false
+
+        // 2. Kiểm tra tần suất
+        return when (medicine.frequencyType) {
+            Frequency.DAILY -> true
+            Frequency.SPECIFIC_DAYS -> {
+                // Ví dụ: "MONDAY,WEDNESDAY"
+                val scheduledDays = medicine.scheduleValue?.split(",")?.mapNotNull {
+                    try { DayOfWeek.valueOf(it.trim()) } catch (e: Exception) { null }
+                } ?: emptyList()
+                scheduledDays.contains(date.dayOfWeek)
+            }
+            Frequency.INTERVAL -> {
+                // Ví dụ: "2" (Cách 2 ngày)
+                val interval = medicine.scheduleValue?.toIntOrNull() ?: 1
+                val daysBetween = ChronoUnit.DAYS.between(startDate, date)
+                daysBetween >= 0 && (daysBetween % interval == 0L)
             }
         }
     }

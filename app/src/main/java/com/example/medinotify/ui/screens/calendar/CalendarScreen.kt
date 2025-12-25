@@ -1,7 +1,7 @@
 package com.example.medinotify.ui.screens.calendar
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable // ✅ 1. Import clickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -20,9 +20,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.medinotify.ui.navigation.NavDestination // ✅ 2. Import NavDestination
+import com.example.medinotify.ui.navigation.NavDestination
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -31,10 +32,17 @@ import java.util.*
 
 @Composable
 fun MedicineCalendarCard(item: ScheduleWithMedicine) {
+    val isTaken = item.schedule.reminderStatus
+
+
+    val cardBackgroundColor = if (isTaken) Color(0xFFE8F5E9) else Color.White
+    val iconBackgroundColor = if (isTaken) Color(0xFF4CAF50) else Color(0xFFFFC700)
+    val timeLabelColor = if (isTaken) Color(0xFF4CAF50) else Color(0xFF2C60FF)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -44,6 +52,7 @@ fun MedicineCalendarCard(item: ScheduleWithMedicine) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -51,7 +60,7 @@ fun MedicineCalendarCard(item: ScheduleWithMedicine) {
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .background(Color(0xFFFFC700), CircleShape),
+                        .background(iconBackgroundColor, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("💊", fontSize = 24.sp)
@@ -59,7 +68,7 @@ fun MedicineCalendarCard(item: ScheduleWithMedicine) {
 
                 Column {
                     Text(
-                        text = item.medicine?.name ?: "Tên thuốc không xác định",
+                        text = item.medicine?.name ?: "Unknown",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -73,11 +82,18 @@ fun MedicineCalendarCard(item: ScheduleWithMedicine) {
                 }
             }
 
+
             Surface(
-                color = Color(0xFF2C60FF),
+                color = timeLabelColor,
                 shape = RoundedCornerShape(8.dp)
             ) {
-                val timeString = item.schedule.specificTimeStr.format(DateTimeFormatter.ofPattern("HH:mm"))
+                val timeString = try {
+                    LocalTime.parse(item.schedule.specificTimeStr)
+                        .format(DateTimeFormatter.ofPattern("HH:mm"))
+                } catch (e: Exception) {
+                    item.schedule.specificTimeStr
+                }
+
                 Text(
                     text = timeString,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -95,21 +111,28 @@ fun CalendarDayCell(
     day: Int,
     isSelected: Boolean,
     isToday: Boolean,
-    hasSchedule: Boolean,
+    status: DayStatus,
     onClick: () -> Unit
 ) {
+
+    val backgroundColor = when {
+        isSelected -> Color(0xFF2C60FF)
+        isToday -> Color(0xFFE3F2FD)
+        else -> Color.Transparent
+    }
+
+
+    val textColor = when {
+        isSelected -> Color.White
+        isToday -> Color(0xFF2C60FF)
+        else -> Color.Black
+    }
+
     Box(
         modifier = Modifier
             .size(40.dp)
             .padding(2.dp)
-            .background(
-                color = when {
-                    isSelected -> Color(0xFF2C60FF)
-                    isToday -> Color(0xFFE3F2FD)
-                    else -> Color.Transparent
-                },
-                shape = CircleShape
-            )
+            .background(backgroundColor, CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -118,32 +141,38 @@ fun CalendarDayCell(
                 text = day.toString(),
                 fontSize = 14.sp,
                 fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
-                color = when {
-                    isSelected -> Color.White
-                    isToday -> Color(0xFF2C60FF)
-                    else -> Color.Black
-                }
+                color = textColor
             )
-            if (hasSchedule && !isSelected) {
+
+
+            if (status != DayStatus.NONE && !isSelected) {
+                val dotColor = when (status) {
+                    DayStatus.COMPLETED -> Color(0xFF4CAF50)
+                    DayStatus.MISSED -> Color(0xFFFF5252)
+                    DayStatus.UPCOMING -> Color(0xFFB0BEC5)
+                    else -> Color.Transparent
+                }
+
                 Box(
                     modifier = Modifier
-                        .size(4.dp)
-                        .background(Color(0xFFFF5A5A), CircleShape)
+                        .padding(top = 2.dp)
+                        .size(6.dp)
+                        .background(dotColor, CircleShape)
                 )
             }
         }
     }
 }
 
+
 @Composable
 fun CalendarGrid(
     selectedDate: LocalDate,
-    scheduledDays: Set<Int>,
+    statusMap: Map<Int, DayStatus>,
     onDayClick: (Int) -> Unit
 ) {
     val yearMonth = YearMonth.from(selectedDate)
-    val firstDayOfMonth = selectedDate.withDayOfMonth(1)
-    val firstDayOfWeek = (firstDayOfMonth.dayOfWeek.value % 7)
+    val firstDayOfWeek = (selectedDate.withDayOfMonth(1).dayOfWeek.value % 7)
     val daysInMonth = yearMonth.lengthOfMonth()
     val today = LocalDate.now()
 
@@ -151,21 +180,25 @@ fun CalendarGrid(
         columns = GridCells.Fixed(7),
         modifier = Modifier.height(280.dp)
     ) {
+
         items(firstDayOfWeek) {
             Box(modifier = Modifier.size(40.dp))
         }
 
+
         items(daysInMonth) { index ->
             val day = index + 1
+            val status = statusMap[day] ?: DayStatus.NONE
             val isSelected = selectedDate.dayOfMonth == day
-            val hasSchedule = scheduledDays.contains(day)
-            val isToday = (today.dayOfMonth == day && today.monthValue == selectedDate.monthValue && today.year == selectedDate.year)
+            val isToday = (today.dayOfMonth == day
+                    && today.monthValue == selectedDate.monthValue
+                    && today.year == selectedDate.year)
 
             CalendarDayCell(
                 day = day,
                 isSelected = isSelected,
                 isToday = isToday,
-                hasSchedule = hasSchedule,
+                status = status,
                 onClick = { onDayClick(day) }
             )
         }
@@ -173,15 +206,16 @@ fun CalendarGrid(
 }
 
 
-
 @Composable
 fun CalendarScreen(
     navController: NavController,
     viewModel: CalendarViewModel = koinViewModel()
 ) {
+
     val selectedDate by viewModel.selectedDate.collectAsState()
-    val scheduledDays by viewModel.scheduledDaysInMonth.collectAsState()
+    val dayStatusMap by viewModel.dayStatusMap.collectAsState()
     val schedulesWithMedicineList by viewModel.schedulesForSelectedDay.collectAsState()
+
 
     val currentMonthYear by remember(selectedDate) {
         derivedStateOf {
@@ -195,6 +229,7 @@ fun CalendarScreen(
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
     ) {
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -204,7 +239,7 @@ fun CalendarScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                Icons.Filled.DateRange,
+                imageVector = Icons.Filled.DateRange,
                 contentDescription = "Calendar",
                 tint = Color(0xFFFF5A5A),
                 modifier = Modifier
@@ -217,30 +252,22 @@ fun CalendarScreen(
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // 👤 2. Icon Hồ sơ (Profile)
                 Icon(
-                    Icons.Default.Person,
+                    imageVector = Icons.Default.Person,
                     contentDescription = "Profile",
                     tint = Color(0xFF355CFF),
                     modifier = Modifier
                         .size(28.dp)
-                        .clickable { // ✅ Thêm điều hướng
-                            navController.navigate(NavDestination.Profile.route)
-                        }
+                        .clickable { navController.navigate(NavDestination.Profile.route) }
                 )
-
                 Spacer(modifier = Modifier.width(18.dp))
-
-                // ⚙️ 3. Icon Cài đặt (Settings)
                 Icon(
-                    Icons.Default.Settings,
+                    imageVector = Icons.Default.Settings,
                     contentDescription = "Settings",
                     tint = Color.DarkGray,
                     modifier = Modifier
                         .size(28.dp)
-                        .clickable { // ✅ Thêm điều hướng
-                            navController.navigate(NavDestination.Settings.route)
-                        }
+                        .clickable { navController.navigate(NavDestination.Settings.route) }
                 )
             }
         }
@@ -255,13 +282,14 @@ fun CalendarScreen(
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { viewModel.changeMonth(-1) }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Previous Month")
+                        Icon(Icons.Default.ArrowBack, "Prev")
                     }
                     Text(
                         text = currentMonthYear,
@@ -269,21 +297,19 @@ fun CalendarScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                     IconButton(onClick = { viewModel.changeMonth(1) }) {
-                        Icon(Icons.Default.ArrowForward, contentDescription = "Next Month")
+                        Icon(Icons.Default.ArrowForward, "Next")
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    listOf("CN", "T2", "T3", "T4", "T5", "T6", "T7").forEach { day ->
+                    listOf("CN", "T2", "T3", "T4", "T5", "T6", "T7").forEach {
                         Text(
-                            text = day,
+                            text = it,
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
                             color = Color.Gray,
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center
@@ -293,13 +319,15 @@ fun CalendarScreen(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+
                 CalendarGrid(
                     selectedDate = selectedDate,
-                    scheduledDays = scheduledDays,
+                    statusMap = dayStatusMap,
                     onDayClick = viewModel::onDaySelected
                 )
             }
         }
+
 
         Text(
             text = "Lịch uống thuốc trong ngày",
@@ -307,8 +335,6 @@ fun CalendarScreen(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(
             modifier = Modifier
@@ -321,20 +347,15 @@ fun CalendarScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 40.dp),
+                            .padding(40.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "Không có lịch uống thuốc cho ngày ${selectedDate.dayOfMonth}/${selectedDate.monthValue}",
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
-                        )
+                        Text("Không có lịch uống thuốc.", color = Color.Gray)
                     }
                 }
             } else {
                 items(schedulesWithMedicineList.size) { index ->
-                    val item = schedulesWithMedicineList[index]
-                    MedicineCalendarCard(item = item)
+                    MedicineCalendarCard(item = schedulesWithMedicineList[index])
                 }
             }
         }

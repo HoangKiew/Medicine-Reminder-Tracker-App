@@ -27,7 +27,6 @@ data class RegisterUiState(
 )
 
 class RegisterViewModel(
-    // ✅ Dependency Injection: Nhận cả Auth và Medicine Repo
     private val authRepository: AuthRepository,
     private val medicineRepository: MedicineRepository
 ) : ViewModel() {
@@ -69,15 +68,15 @@ class RegisterViewModel(
         val trimmedEmail = current.email.trim()
         val digitsOnlyPhone = current.phone.filter { it.isDigit() }
 
-        // --- Validation Logic (Giữ nguyên) ---
+        // --- Validation Logic ---
         val error = when {
-            trimmedName.length < 3 -> "Vui lòng nhập đầy đủ họ tên."
-            !trimmedName.contains(" ") -> "Vui lòng nhập đầy đủ họ tên."
+            trimmedName.length < 3 -> "Vui lòng nhập đầy đủ họ tên (tối thiểu 3 ký tự)."
+            !trimmedName.contains(" ") -> "Vui lòng nhập cả họ và tên."
             trimmedEmail.isBlank() -> "Vui lòng nhập email."
             !Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches() -> "Email chưa đúng định dạng."
-            digitsOnlyPhone.length !in 9..11 -> "Số điện thoại chưa hợp lệ."
+            digitsOnlyPhone.length !in 9..11 -> "Số điện thoại không hợp lệ."
             current.password.length < 6 -> "Mật khẩu cần ít nhất 6 ký tự."
-            current.password != current.confirmPassword -> "Mật khẩu nhập lại chưa trùng khớp."
+            current.password != current.confirmPassword -> "Mật khẩu nhập lại không khớp."
             else -> null
         }
 
@@ -89,35 +88,30 @@ class RegisterViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            // ✅ FIX LỖI: Gọi hàm signUp với tên tham số (pass, name) khớp với AuthRepository
+            // Gọi hàm đăng ký
             val result = authRepository.signUp(
                 email = trimmedEmail,
-                pass = current.password,     // Dùng 'pass'
-                name = trimmedName           // Thêm 'name'
+                pass = current.password,
+                name = trimmedName
             )
 
             when (result) {
                 is AuthResult.Success -> {
-                    try {
-                        // KÍCH HOẠT ĐỒNG BỘ: Tải dữ liệu mẫu/mới về Room
-                        medicineRepository.syncDataFromFirebase()
-                        Log.d("RegisterVM", "Data synced successfully after registration.")
 
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                isRegistered = true,
-                                navigateToLogin = true
-                            )
-                        }
+                    try {
+                        medicineRepository.syncDataFromFirebase()
+                        Log.d("RegisterVM", "Đồng bộ dữ liệu ban đầu thành công.")
                     } catch (e: Exception) {
-                        Log.e("RegisterVM", "Failed to sync data after registration: ${e.message}")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = "Đăng ký thành công, nhưng không thể tải dữ liệu ban đầu."
-                            )
-                        }
+                        Log.e("RegisterVM", "Lỗi đồng bộ sau khi đăng ký: ${e.message}")
+                        // Không chặn luồng chính, vẫn cho user vào app nhưng ghi log lỗi
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isRegistered = true,
+                            navigateToLogin = true
+                        )
                     }
                 }
                 is AuthResult.Error -> {

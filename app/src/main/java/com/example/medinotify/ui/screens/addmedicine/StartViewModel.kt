@@ -10,6 +10,5 @@ import com.example.medinotify.data.repository.MedicineRepository
  * và để dễ dàng mở rộng trong tương lai.
  */
 class StartViewModel(private val repository: MedicineRepository) : ViewModel() {
-    // Có thể thêm các logic kiểm tra trạng thái ban đầu ở đây nếu cần.
-    // Ví dụ: kiểm tra xem người dùng đã có thuốc nào chưa.
+
 }

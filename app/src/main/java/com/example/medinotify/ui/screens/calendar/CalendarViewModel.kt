@@ -4,16 +4,33 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medinotify.data.domain.Medicine
 import com.example.medinotify.data.domain.Schedule
+import com.example.medinotify.data.model.Frequency
 import com.example.medinotify.data.repository.MedicineRepository
-import com.example.medinotify.utils.CalendarLogic
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.UUID
+
+enum class DayStatus { NONE, UPCOMING, COMPLETED, MISSED }
 
 data class ScheduleWithMedicine(
     val schedule: Schedule,
-    val medicine: Medicine?
+    val medicine: Medicine?,
+    val status: DayStatus
 )
 
 class CalendarViewModel(
@@ -23,44 +40,78 @@ class CalendarViewModel(
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
-    // 1. Lấy danh sách Schedule chi tiết cho ngày được chọn
+
     val schedulesForSelectedDay: StateFlow<List<ScheduleWithMedicine>> = _selectedDate
         .flatMapLatest { selectedDate ->
-
-            val allSchedulesFlow = repository.getAllSchedules()
-            val medicinesFlow = repository.getAllMedicines()
-
-            combine(allSchedulesFlow, medicinesFlow) { allSchedules, allMedicines ->
-                val medicineMap = allMedicines.associateBy { it.medicineId }
-
-                //Tạo Map để đếm số lần uống cho mỗi thuốc
-                val dosesPerDayMap = allSchedules
-                    .groupBy { it.medicineId }
-                    .mapValues { it.value.size }
-
+            combine(repository.getAllSchedules(), repository.getAllMedicines()) { allSchedules, allMedicines ->
                 val results = mutableListOf<ScheduleWithMedicine>()
+                val today = LocalDate.now()
+                val nowTime = LocalTime.now()
 
-                for (schedule in allSchedules) {
-                    val medicine = medicineMap[schedule.medicineId]
-                    if (medicine == null || !medicine.isActive) continue
 
-                    val dosesPerDay = dosesPerDayMap[medicine.medicineId] ?: 0
+                val medicineTimesMap = allSchedules
+                    .groupBy { it.medicineId }
+                    .mapValues { entry -> entry.value.map { it.specificTimeStr }.toSet() }
 
-                    //Truyền dosesPerDay vào CalendarLogic
-                    val isScheduledToday = CalendarLogic.isScheduledForDate(
-                        date = selectedDate,
-                        medicine = medicine,
-                        dosesPerDay = dosesPerDay //
-                    )
 
-                    if (isScheduledToday) {
-                        results.add(ScheduleWithMedicine(
-                            schedule = schedule,
-                            medicine = medicine
-                        ))
+                for (medicine in allMedicines) {
+                    if (!medicine.isActive) continue
+
+
+                    if (isMedicineScheduledForDate(selectedDate, medicine)) {
+
+
+                        val times = medicineTimesMap[medicine.medicineId] ?: emptySet()
+
+                        for (timeStr in times) {
+
+                            val existingSchedule = allSchedules.find { s ->
+                                val sDate = Instant.ofEpochMilli(s.nextScheduledTimestamp)
+                                    .atZone(ZoneId.systemDefault()).toLocalDate()
+                                s.medicineId == medicine.medicineId &&
+                                        s.specificTimeStr == timeStr &&
+                                        sDate == selectedDate
+                            }
+
+                            if (existingSchedule != null) {
+
+                                val status = if (existingSchedule.reminderStatus) DayStatus.COMPLETED else DayStatus.MISSED
+
+
+                                val finalStatus = if (selectedDate == today && !existingSchedule.reminderStatus) {
+                                    val t = try { LocalTime.parse(timeStr) } catch(e:Exception){ LocalTime.MIN }
+                                    if (t.isAfter(nowTime)) DayStatus.UPCOMING else DayStatus.MISSED
+                                } else status
+
+                                results.add(ScheduleWithMedicine(existingSchedule, medicine, finalStatus))
+                            } else {
+
+                                val virtualSchedule = Schedule(
+                                    scheduleId = "virtual_${UUID.randomUUID()}",
+                                    medicineId = medicine.medicineId,
+                                    specificTimeStr = timeStr,
+                                    nextScheduledTimestamp = selectedDate.atTime(
+                                        try { LocalTime.parse(timeStr) } catch(e:Exception){ LocalTime.MIN }
+                                    ).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                                    reminderStatus = false
+                                )
+
+
+                                val status = when {
+                                    selectedDate.isBefore(today) -> DayStatus.MISSED
+                                    selectedDate.isAfter(today) -> DayStatus.UPCOMING
+                                    else -> { // Hôm nay
+                                        val t = try { LocalTime.parse(timeStr) } catch(e:Exception){ LocalTime.MIN }
+                                        if (t.isBefore(nowTime)) DayStatus.MISSED else DayStatus.UPCOMING
+                                    }
+                                }
+
+                                results.add(ScheduleWithMedicine(virtualSchedule, medicine, status))
+                            }
+                        }
                     }
                 }
-                // Sắp xếp theo giờ cụ thể
+
                 results.sortedBy { it.schedule.specificTimeStr }
             }
         }
@@ -70,72 +121,75 @@ class CalendarViewModel(
             initialValue = emptyList()
         )
 
-    // 2. Xác định những ngày nào trong tháng có lịch uống thuốc (để hiện chấm đỏ)
-    val scheduledDaysInMonth: StateFlow<Set<Int>> = selectedDate
+
+    val dayStatusMap: StateFlow<Map<Int, DayStatus>> = selectedDate
         .map { YearMonth.from(it) }
         .distinctUntilChanged()
         .flatMapLatest { yearMonth ->
-
-            val allSchedulesFlow = repository.getAllSchedules()
-            val allMedicinesFlow = repository.getAllMedicines()
-
-            combine(allSchedulesFlow, allMedicinesFlow) { allSchedules, allMedicines ->
-
-                val dosesPerDayMap = allSchedules
-                    .groupBy { it.medicineId }
-                    .mapValues { it.value.size }
-
-                val daysWithSchedule = mutableSetOf<Int>()
-
+            combine(repository.getAllMedicines(), repository.getAllSchedules()) { allMedicines, allSchedules ->
+                val statusMap = mutableMapOf<Int, DayStatus>()
+                val today = LocalDate.now()
                 val monthStart = yearMonth.atDay(1)
                 val monthEnd = yearMonth.atEndOfMonth()
-
                 var currentDate = monthStart
-                while (currentDate.isBefore(monthEnd.plusDays(1))) {
 
-                    var hasScheduleOnThisDay = false
+                while (!currentDate.isAfter(monthEnd)) {
 
-                    for (medicine in allMedicines) {
-                        if (!medicine.isActive) continue
+                    val medsForDay = allMedicines.filter { it.isActive && isMedicineScheduledForDate(currentDate, it) }
 
-                        val dosesPerDay = dosesPerDayMap[medicine.medicineId] ?: 0
+                    if (medsForDay.isNotEmpty()) {
+                        if (currentDate.isAfter(today)) {
 
-                        if (CalendarLogic.isScheduledForDate(
-                                currentDate,
-                                medicine,
-                                dosesPerDay
-                            )) {
-                            hasScheduleOnThisDay = true
-                            break
+                            statusMap[currentDate.dayOfMonth] = DayStatus.UPCOMING
+                        } else {
+
+                            val schedulesOnDate = allSchedules.filter { s ->
+                                val sDate = Instant.ofEpochMilli(s.nextScheduledTimestamp)
+                                    .atZone(ZoneId.systemDefault()).toLocalDate()
+                                sDate == currentDate && medsForDay.any { it.medicineId == s.medicineId }
+                            }
+
+                            if (schedulesOnDate.isEmpty()) {
+
+                                statusMap[currentDate.dayOfMonth] = DayStatus.MISSED
+                            } else {
+                                val allTaken = schedulesOnDate.all { it.reminderStatus }
+                                statusMap[currentDate.dayOfMonth] = if (allTaken) DayStatus.COMPLETED else DayStatus.MISSED
+                            }
                         }
                     }
-
-                    if (hasScheduleOnThisDay) {
-                        daysWithSchedule.add(currentDate.dayOfMonth)
-                    }
-
-                    // Tiến lên ngày tiếp theo
                     currentDate = currentDate.plusDays(1)
                 }
-
-                daysWithSchedule
+                statusMap
             }
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptySet()
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    fun changeMonth(offset: Int) {
-        _selectedDate.update { currentDate ->
-            currentDate.plusMonths(offset.toLong()).withDayOfMonth(1)
-        }
-    }
+    fun changeMonth(offset: Int) { _selectedDate.update { it.plusMonths(offset.toLong()).withDayOfMonth(1) } }
+    fun onDaySelected(day: Int) { _selectedDate.update { it.withDayOfMonth(day) } }
 
-    fun onDaySelected(day: Int) {
-        _selectedDate.update { currentDate ->
-            currentDate.withDayOfMonth(day)
+
+    private fun isMedicineScheduledForDate(date: LocalDate, medicine: Medicine): Boolean {
+        val startDate = Instant.ofEpochMilli(medicine.startDateTimestamp).atZone(ZoneId.systemDefault()).toLocalDate()
+
+
+        if (date.isBefore(startDate)) return false
+
+
+
+        return when (medicine.frequencyType) {
+            Frequency.DAILY -> true
+            Frequency.SPECIFIC_DAYS -> {
+                val scheduledDays = medicine.scheduleValue?.split(",")?.mapNotNull {
+                    try { DayOfWeek.valueOf(it.trim()) } catch (e: Exception) { null }
+                } ?: emptyList()
+                scheduledDays.contains(date.dayOfWeek)
+            }
+            Frequency.INTERVAL -> {
+                val interval = medicine.scheduleValue?.toIntOrNull() ?: 1
+                val daysBetween = ChronoUnit.DAYS.between(startDate, date)
+                daysBetween >= 0 && (daysBetween % interval == 0L)
+            }
         }
     }
 }

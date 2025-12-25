@@ -51,7 +51,6 @@ class MedicineReminderViewModel(
             .putString("SCHEDULE_TIME", time)
             .build()
 
-        // Tạo yêu cầu WorkManager chạy sau 10 phút
         val snoozeWork = OneTimeWorkRequestBuilder<MedicineReminderWorker>()
             .setInitialDelay(10, TimeUnit.MINUTES)
             .setInputData(data)
