@@ -5,13 +5,7 @@ import com.example.medinotify.data.model.Frequency
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.time.DayOfWeek
-// Loại bỏ các imports java.time không cần thiết
-// import java.time.Instant
-// import java.time.LocalDate
-// import java.time.LocalTime
-// import java.time.ZoneId
-// import java.time.format.DateTimeFormatter
-// import java.util.Date
+
 
 
 class Converters {

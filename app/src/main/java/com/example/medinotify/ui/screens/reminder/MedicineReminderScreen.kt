@@ -48,7 +48,7 @@ fun MedicineReminderScreen(
             .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- HEADER: Nút Back ---
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Start
@@ -65,7 +65,7 @@ fun MedicineReminderScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // --- MAIN CARD ---
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(32.dp),
@@ -80,7 +80,7 @@ fun MedicineReminderScreen(
                 modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Top Icons (Info & Delete)
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -108,7 +108,7 @@ fun MedicineReminderScreen(
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // Question Text
+
                 Text(
                     text = "Bạn đã uống thuốc chưa?",
                     fontSize = 22.sp,
@@ -116,7 +116,7 @@ fun MedicineReminderScreen(
                     color = Color(0xFF2C3E50)
                 )
 
-                // Image
+
                 Image(
                     painter = painterResource(id = R.drawable.medicine_start),
                     contentDescription = null,
@@ -125,7 +125,7 @@ fun MedicineReminderScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Medicine Name
+
                 Text(
                     text = medicineName,
                     fontSize = 34.sp,
@@ -136,7 +136,7 @@ fun MedicineReminderScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Time Info
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -157,7 +157,7 @@ fun MedicineReminderScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Dosage Info
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -178,12 +178,12 @@ fun MedicineReminderScreen(
 
                 Spacer(modifier = Modifier.height(48.dp))
 
-                // --- ACTION BUTTONS ---
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Button: Đã uống
+
                     Button(
                         onClick = {
                             viewModel.markAsTaken(medicineId, time) {
@@ -208,20 +208,20 @@ fun MedicineReminderScreen(
                         )
                     }
 
-                    // Button: Lát nữa
+
                     OutlinedButton(
                         onClick = {
-                            // 1. Gọi hàm Snooze
+
                             viewModel.snoozeReminder(medicineId, medicineName, dosage, time)
 
-                            // 2. Hiện thông báo
+
                             Toast.makeText(
                                 context,
                                 "Sẽ nhắc lại sau 10 phút nữa!",
                                 Toast.LENGTH_SHORT
                             ).show()
 
-                            // 3. Đóng màn hình
+
                             navController.popBackStack()
                         },
                         modifier = Modifier

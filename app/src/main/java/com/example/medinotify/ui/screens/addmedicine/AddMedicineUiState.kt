@@ -25,7 +25,7 @@ data class AddMedicineUiState(
     // 3. Các ngày được chọn (Chỉ dùng cho Frequency.SPECIFIC_DAYS)
     val selectedDays: Set<DayOfWeek> = emptySet(),
 
-    // 4. Ngày bắt đầu (Bắt buộc)
+    // 4. Ngày bắt đầu
     val startDate: LocalDate = LocalDate.now(),
 
     // 5. Các giờ nhắc nhở cụ thể trong ngày

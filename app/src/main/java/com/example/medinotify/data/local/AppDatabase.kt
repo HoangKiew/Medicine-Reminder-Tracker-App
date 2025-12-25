@@ -18,7 +18,7 @@ import com.example.medinotify.data.model.LogEntryEntity
     version = 5,
     exportSchema = false
 )
-// ✨✨✨ THÊM DÒNG NÀY ĐỂ KẾT NỐI VỚI FILE CONVERTERS.KT ✨✨✨
+
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 

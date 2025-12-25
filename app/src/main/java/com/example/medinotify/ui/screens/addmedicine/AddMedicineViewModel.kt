@@ -15,8 +15,8 @@ import com.example.medinotify.worker.MedicineReminderWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.Duration
@@ -28,16 +28,17 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-
 class AddMedicineViewModel(
     private val repository: MedicineRepository,
     private val workManager: WorkManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AddMedicineUiState(
-        medicineId = savedStateHandle["medicineId"]
-    ))
+    private val _uiState = MutableStateFlow(
+        AddMedicineUiState(
+            medicineId = savedStateHandle["medicineId"]
+        )
+    )
     val uiState: StateFlow<AddMedicineUiState> = _uiState.asStateFlow()
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -46,19 +47,33 @@ class AddMedicineViewModel(
         uiState.value.medicineId?.let { loadMedicineData(it) }
     }
 
-    // --- Helper Functions (Giữ nguyên) ---
-    fun onNameChange(newName: String) { _uiState.update { it.copy(name = newName, uiMessage = null) } }
-    fun onTypeChange(newType: String) { _uiState.update { it.copy(medicineType = newType, uiMessage = null) } }
-    fun onDosageChange(newDosage: String) { _uiState.update { it.copy(dosage = newDosage, uiMessage = null) } }
+
+    fun onNameChange(newName: String) {
+        _uiState.update { it.copy(name = newName, uiMessage = null) }
+    }
+
+    fun onTypeChange(newType: String) {
+        _uiState.update { it.copy(medicineType = newType, uiMessage = null) }
+    }
+
+    fun onDosageChange(newDosage: String) {
+        _uiState.update { it.copy(dosage = newDosage, uiMessage = null) }
+    }
+
     fun onQuantityChange(newQuantity: String) {
         if (newQuantity.all { it.isDigit() } || newQuantity.isEmpty()) {
             _uiState.update { it.copy(quantity = newQuantity, uiMessage = null) }
         }
     }
-    fun onEnableReminderChange(isEnabled: Boolean) { _uiState.update { it.copy(enableReminder = isEnabled, uiMessage = null) } }
+
+    fun onEnableReminderChange(isEnabled: Boolean) {
+        _uiState.update { it.copy(enableReminder = isEnabled, uiMessage = null) }
+    }
+
     fun onStartDateChange(date: LocalDate) {
         _uiState.update { it.copy(startDate = date, uiMessage = null) }
     }
+
     fun onFrequencyTypeChange(type: Frequency) {
         _uiState.update {
             it.copy(
@@ -69,11 +84,15 @@ class AddMedicineViewModel(
             )
         }
     }
+
     fun onIntervalDaysChange(interval: String) {
-        if (interval.all { it.isDigit() } && interval.isNotEmpty() && (interval.toIntOrNull() ?: 0) > 0) {
+        if (interval.all { it.isDigit() } && interval.isNotEmpty() && (interval.toIntOrNull()
+                ?: 0) > 0
+        ) {
             _uiState.update { it.copy(intervalDays = interval, uiMessage = null) }
         }
     }
+
     fun toggleDaySelection(day: DayOfWeek) {
         _uiState.update {
             val newDays = if (it.selectedDays.contains(day)) {
@@ -104,12 +123,15 @@ class AddMedicineViewModel(
         _uiState.update {
             it.copy(
                 specificTimes = (it.specificTimes - time)
-                    .sorted() // -> List
-                    .toSet()    // <- Chuyển List về Set
+                    .sorted()
+                    .toSet()
             )
         }
     }
-    fun clearUiMessage() { _uiState.update { it.copy(uiMessage = null) } }
+
+    fun clearUiMessage() {
+        _uiState.update { it.copy(uiMessage = null) }
+    }
 
 
     private fun loadMedicineData(id: String) {
@@ -117,29 +139,38 @@ class AddMedicineViewModel(
         viewModelScope.launch {
             val medicine = repository.getMedicineById(id)
 
-            // Lấy Schedules từ Flow (Sử dụng .first() để lấy giá trị suspend)
+
             val schedules = repository.getSchedulesForMedicine(id).first()
 
             if (medicine != null) {
-                // 1. Chuyển đổi Long Timestamp thành LocalDate cho UI State
+
                 val loadedStartDate = medicine.startDateTimestamp.let {
-                    if (it != 0L) LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(it), ZoneId.systemDefault()).toLocalDate() else LocalDate.now()
+                    if (it != 0L) LocalDateTime.ofInstant(
+                        java.time.Instant.ofEpochMilli(it),
+                        ZoneId.systemDefault()
+                    ).toLocalDate() else LocalDate.now()
                 }
 
-                // 2. Chuyển đổi Schedule.specificTimeStr (String) thành LocalTime cho UI State
+
                 val loadedSpecificTimes: Set<LocalTime> = schedules.mapNotNull { schedule ->
                     try {
                         LocalTime.parse(schedule.specificTimeStr, timeFormatter)
                     } catch (e: Exception) {
-                        Log.e("AddMedicineVM", "Error parsing schedule time: ${schedule.specificTimeStr}", e)
+                        Log.e(
+                            "AddMedicineVM",
+                            "Error parsing schedule time: ${schedule.specificTimeStr}",
+                            e
+                        )
                         null
                     }
                 }
                     .toSet()
 
 
-                val daysOfWeekSet = parseScheduleValueToDays(medicine.scheduleValue, medicine.frequencyType)
-                val intervalString = parseScheduleValueToInterval(medicine.scheduleValue, medicine.frequencyType)
+                val daysOfWeekSet =
+                    parseScheduleValueToDays(medicine.scheduleValue, medicine.frequencyType)
+                val intervalString =
+                    parseScheduleValueToInterval(medicine.scheduleValue, medicine.frequencyType)
 
                 _uiState.update {
                     it.copy(
@@ -149,7 +180,7 @@ class AddMedicineViewModel(
                         quantity = medicine.quantity.toString(),
                         enableReminder = medicine.isActive,
 
-                        // LOAD DỮ LIỆU LỊCH TRÌNH
+
                         startDate = loadedStartDate,
                         frequencyType = medicine.frequencyType,
                         selectedDays = daysOfWeekSet,
@@ -169,7 +200,11 @@ class AddMedicineViewModel(
     private fun parseScheduleValueToDays(value: String?, type: Frequency): Set<DayOfWeek> {
         return if (type == Frequency.SPECIFIC_DAYS && value != null) {
             value.split(",").mapNotNull {
-                try { DayOfWeek.valueOf(it.trim()) } catch (e: Exception) { null }
+                try {
+                    DayOfWeek.valueOf(it.trim())
+                } catch (e: Exception) {
+                    null
+                }
             }.toSet()
         } else emptySet()
     }
@@ -181,12 +216,12 @@ class AddMedicineViewModel(
     }
 
 
-    // --- HÀM LƯU CHÍNH (ADD HOẶC UPDATE) ---
+
     fun saveMedicine(onSuccess: () -> Unit) {
         val state = _uiState.value
         _uiState.update { it.copy(uiMessage = null) }
 
-        // 1. Validation (Giữ nguyên)
+
         if (state.name.isBlank() || state.medicineType == "Chọn dạng thuốc" || state.dosage.isBlank() || state.quantity.isBlank()) {
             _uiState.update { it.copy(uiMessage = "Vui lòng nhập đủ thông tin!") }
             return
@@ -200,7 +235,9 @@ class AddMedicineViewModel(
                 _uiState.update { it.copy(uiMessage = "Vui lòng chọn ít nhất một ngày trong tuần.") }
                 return
             }
-            if (state.frequencyType == Frequency.INTERVAL && (state.intervalDays.toIntOrNull() ?: 0) <= 0) {
+            if (state.frequencyType == Frequency.INTERVAL && (state.intervalDays.toIntOrNull()
+                    ?: 0) <= 0
+            ) {
                 _uiState.update { it.copy(uiMessage = "Khoảng cách ngày phải lớn hơn 0.") }
                 return
             }
@@ -212,18 +249,20 @@ class AddMedicineViewModel(
                 val finalMedicineId = state.medicineId ?: UUID.randomUUID().toString()
 
                 val scheduleValueString = when (state.frequencyType) {
-                    Frequency.SPECIFIC_DAYS -> state.selectedDays.map { it.toString() }.joinToString(",")
+                    Frequency.SPECIFIC_DAYS -> state.selectedDays.map { it.toString() }
+                        .joinToString(",")
+
                     Frequency.INTERVAL -> state.intervalDays
                     else -> null
                 }
 
-                // CHUYỂN LocalDate thành Long Timestamp cho Domain Model
+
                 val startDateLong = state.startDate
                     .atStartOfDay(ZoneId.systemDefault())
                     .toInstant()
                     .toEpochMilli()
 
-                // 3. Tạo Medicine Domain Model
+
                 val medicine = Medicine(
                     medicineId = finalMedicineId,
                     name = state.name,
@@ -237,28 +276,36 @@ class AddMedicineViewModel(
                     isActive = state.enableReminder
                 )
 
-                // 4. Tạo Schedule records
+
                 val schedulesToSave = mutableListOf<Schedule>()
                 if (state.enableReminder) {
                     state.specificTimes.forEach { time ->
-                        // Lịch trình trong Room/Firebase cần NextScheduledTimestamp là ngày bắt đầu
-                        val scheduleDateTime = state.startDate.atTime(time)
-                        val timestamp = scheduleDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-                        // CHUYỂN LocalTime thành String (HH:mm) cho Domain Model
+                        val scheduleDateTime = state.startDate.atTime(time)
+                        val timestamp = scheduleDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                            .toEpochMilli()
+
+
                         val timeString = time.format(timeFormatter)
 
-                        schedulesToSave.add(Schedule(
-                            scheduleId = UUID.randomUUID().toString(),
-                            medicineId = finalMedicineId,
-                            specificTimeStr = timeString,
-                            nextScheduledTimestamp = timestamp, // Lần đầu tiên: Ngày bắt đầu + Giờ
-                            reminderStatus = false, // Reset trạng thái chưa uống
-                        ))
+                        schedulesToSave.add(
+                            Schedule(
+                                scheduleId = UUID.randomUUID().toString(),
+                                medicineId = finalMedicineId,
+                                specificTimeStr = timeString,
+                                nextScheduledTimestamp = timestamp,
+                                reminderStatus = false,
+                            )
+                        )
                     }
 
-                    // 5. Lập lịch WorkManager: Lập lịch cho LỊCH TRÌNH TIẾP THEO GẦN NHẤT
-                    val nextScheduleTime = findNextScheduleTime(state.specificTimes)
+                    val nextScheduleDateTime = findNextScheduleTime(
+                        specificTimes = state.specificTimes,
+                        startDate = state.startDate,
+                        frequency = state.frequencyType,
+                        interval = (state.intervalDays.toIntOrNull() ?: 1),
+                        selectedDays = state.selectedDays
+                    )
 
                     if (state.medicineId != null) cancelExistingWork(state.medicineId)
 
@@ -266,13 +313,12 @@ class AddMedicineViewModel(
                         medId = finalMedicineId,
                         name = state.name,
                         dose = state.dosage,
-                        time = nextScheduleTime.toLocalTime()
+                        targetDateTime = nextScheduleDateTime
                     )
                 } else if (state.medicineId != null) {
                     cancelExistingWork(state.medicineId)
                 }
 
-                // 6. Lưu vào Repository
                 if (state.medicineId != null) {
                     repository.updateMedicine(medicine, schedulesToSave)
                 } else {
@@ -289,53 +335,82 @@ class AddMedicineViewModel(
         }
     }
 
-    // --- HÀM HELPER MỚI: TÌM LỊCH TRÌNH TIẾP THEO GẦN NHẤT ---
-    /**
-     * Tìm giờ uống gần nhất (hôm nay hoặc ngày mai)
-     */
-    private fun findNextScheduleTime(specificTimes: Set<LocalTime>): LocalDateTime {
+    private fun findNextScheduleTime(
+        specificTimes: Set<LocalTime>,
+        startDate: LocalDate,
+        frequency: Frequency,
+        interval: Int,
+        selectedDays: Set<DayOfWeek>
+    ): LocalDateTime {
         if (specificTimes.isEmpty()) return LocalDateTime.MAX
 
         val now = LocalDateTime.now()
-
-        // Sắp xếp giờ uống để tìm giờ gần nhất trong ngày hôm nay
+        val today = LocalDate.now()
         val sortedTimes = specificTimes.sorted()
 
-        // 1. Kiểm tra ngày hôm nay
-        val today = LocalDate.now()
-        for (time in sortedTimes) {
-            val potentialTime = today.atTime(time)
-            if (potentialTime.isAfter(now)) {
-                return potentialTime // Giờ gần nhất trong ngày hôm nay (trong tương lai)
+        val baseDate = if (startDate.isAfter(today)) startDate else today
+
+        var isBaseDateValid = true
+
+        if (frequency == Frequency.SPECIFIC_DAYS) {
+            isBaseDateValid = selectedDays.contains(baseDate.dayOfWeek)
+        }
+
+
+        if (isBaseDateValid) {
+
+            if (baseDate == today) {
+                for (time in sortedTimes) {
+                    val potentialTime = baseDate.atTime(time)
+                    if (potentialTime.isAfter(now)) {
+                        return potentialTime
+                    }
+                }
+            } else {
+
+                return baseDate.atTime(sortedTimes.first())
             }
         }
 
-        // 2. Nếu không tìm thấy giờ nào trong ngày hôm nay: Lập lịch cho giờ đầu tiên của ngày mai.
-        val tomorrow = today.plusDays(1)
-        val firstTimeTomorrow = tomorrow.atTime(sortedTimes.first())
+        val nextDate = when (frequency) {
+            Frequency.DAILY -> baseDate.plusDays(1)
+            Frequency.INTERVAL -> baseDate.plusDays(interval.toLong())
+            Frequency.SPECIFIC_DAYS -> {
+                var d = baseDate.plusDays(1)
+                while (!selectedDays.contains(d.dayOfWeek)) {
+                    d = d.plusDays(1)
+                    if (Duration.between(baseDate.atStartOfDay(), d.atStartOfDay())
+                            .toDays() > 365
+                    ) break
+                }
+                d
+            }
+        }
 
-        return firstTimeTomorrow
+        return nextDate.atTime(sortedTimes.first())
     }
 
 
-    // --- HÀM LẬP LỊCH WORKER (Giữ nguyên) ---
-    private fun scheduleNotification(medId: String, name: String, dose: String, time: LocalTime) {
+    private fun scheduleNotification(
+        medId: String,
+        name: String,
+        dose: String,
+        targetDateTime: LocalDateTime
+    ) {
         val now = LocalDateTime.now()
-        var targetTime = LocalDate.now().atTime(time)
 
-        // Logic này đã được xử lý trong findNextScheduleTime, nhưng giữ lại để an toàn
-        if (targetTime.isBefore(now)) {
-            targetTime = targetTime.plusDays(1)
+        val delay = Duration.between(now, targetDateTime).toMillis()
+
+        if (delay < 0) {
+            Log.w("AddMedicineVM", "Target time is in the past: $targetDateTime")
+            return
         }
-
-        val delay = Duration.between(now, targetTime).toMillis()
 
         val data = Data.Builder()
             .putString("MEDICINE_ID", medId)
             .putString("MEDICINE_NAME", name)
             .putString("MEDICINE_DOSAGE", dose)
-            // ✅ FIX: Đảm bảo SCHEDULE_TIME được truyền dưới dạng chuỗi HH:mm
-            .putString("SCHEDULE_TIME", time.format(timeFormatter))
+            .putString("SCHEDULE_TIME", targetDateTime.format(timeFormatter))
             .build()
 
         val workRequest = OneTimeWorkRequestBuilder<MedicineReminderWorker>()

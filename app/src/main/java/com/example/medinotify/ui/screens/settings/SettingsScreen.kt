@@ -79,7 +79,7 @@ data class SettingsItem(
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    // ✅ Inject ViewModel (Sẽ hết lỗi sau khi tạo file ở Bước 1)
+
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -111,7 +111,7 @@ fun SettingsScreen(
                     SettingsCard {
                         SettingsMenuItem(
                             icon = Icons.Default.Person,
-                            title = "Chỉnh sửa hồ sơ",
+                            title = "Hồ sơ cá nhân",
                             onClick = { navController.navigate(NavDestination.Profile.route) }
                         )
                         SettingsDivider()
@@ -180,7 +180,7 @@ fun SettingsScreen(
                         )
                         SettingsDivider()
 
-                        // ✨ NÚT ĐĂNG XUẤT ✨
+
                         SettingsMenuItem(
                             icon = Icons.Default.Logout,
                             title = "Đăng xuất",
