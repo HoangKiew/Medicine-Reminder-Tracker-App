@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            // ✅ SỬA Ở ĐÂY: Thêm (darkTheme = false) để ép dùng giao diện trắng
+
             MedinotifyTheme(darkTheme = false) {
 
                 Surface(
